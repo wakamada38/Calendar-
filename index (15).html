@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Calendar</title>
+<script src="firebase-config.js"></script><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1f7a52"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d2b24;--mut:#6b7a72;--ac:#1f7a52;--acs:#e0f1e8;--bd:#e3e1d9;--red:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121815;--card:#1b241f;--tx:#e8efe9;--mut:#93a49a;--ac:#4cc38a;--acs:#21392d;--bd:#2c3a32;--red:#ef7a6d}}
+:root[data-theme=dark]{--bg:#121815;--card:#1b241f;--tx:#e8efe9;--mut:#93a49a;--ac:#4cc38a;--acs:#21392d;--bd:#2c3a32;--red:#ef7a6d}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:640px;margin:0 auto;padding:12px 12px 80px}
+button,input,textarea{font:inherit;color:inherit}
+button{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;cursor:pointer}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+input,textarea{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:9px 10px}
+textarea{min-height:170px;resize:vertical}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.top h1{flex:1;font-size:19px;margin:0;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{text-align:center;font-size:11px;color:var(--mut);padding:2px 0}
+.cell{aspect-ratio:1/1.05;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:3px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative}
+.cell.o{opacity:.4}.cell.t .n{background:var(--ac);color:#fff}.cell.s{outline:2px solid var(--ac)}
+.n{font-size:13px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
+.dots{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;margin-top:2px}
+.dots i{width:6px;height:6px;border-radius:50%;display:block}
+.sheet{margin-top:14px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px}
+.sheet h2{margin:0 0 8px;font-size:17px}
+.tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:10px}
+.tabs button{flex:1;white-space:nowrap;padding:7px 8px;font-size:13px}
+.tabs button.a{background:var(--acs);border-color:var(--ac);color:var(--ac)}
+.row{display:flex;gap:6px;margin-bottom:6px}.row>*{min-width:0}
+.item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;margin-top:6px}
+.item .b{flex:1;min-width:0;overflow-wrap:anywhere}.item small{color:var(--mut);display:block}
+.item.d .b{text-decoration:line-through;opacity:.55}
+.x{background:none;border:none;color:var(--red);padding:4px 8px;font-size:18px}
+.sw{width:14px;height:14px;border-radius:50%;flex:none}
+.imgs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.imgs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer}
+.imgs div{position:relative}.imgs .x{position:absolute;top:2px;right:2px;background:#000a;color:#fff;border-radius:50%;padding:0 7px}
+audio{width:100%;margin-top:4px}
+.rec{background:var(--red);color:#fff;border-color:var(--red)}
+.mut{color:var(--mut);font-size:13px}
+#toast{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top,0px));max-width:616px;margin:auto;background:var(--ac);color:#fff;padding:12px 14px;border-radius:12px;display:none;z-index:9;box-shadow:0 4px 18px #0005}
+#view{position:fixed;inset:0;background:#000d;display:none;place-items:center;z-index:8}#view img{max-width:96%;max-height:92%}
+select{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:9px 6px;color:inherit;font:inherit}.top h1{font-size:17px}.top button{padding:8px 9px}.mo{flex:1;padding:6px 0;font-size:18px}.mo.a{background:var(--acs);border-color:var(--ac)}#off{display:none;text-align:center;font-size:12px;color:var(--mut);margin:-4px 0 8px}.up{margin-top:14px}.up h3{font-size:14px;margin:0 0 4px;color:var(--mut)}
+</style></head><body>
+<div id="toast"></div><div id="view"><img alt=""></div>
+<div class="top"><button id="pv">‹</button><h1 id="mt"></h1><button id="nx">›</button><button id="td">Today</button><button id="sb">🔍</button><button id="mn">⋮</button></div><div class="sheet" id="pn" style="display:none;margin:0 0 10px"></div>
+<div id="off">Offline · everything is saved on this device</div><div class="grid" id="g"></div>
+<div class="sheet" id="sh"></div>
+<div class="up"><h3>Upcoming reminders</h3><div id="upl"></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const COL=['#1f7a52','#2a6fdb','#d9822b','#c0392b','#8e44ad','#16a2b8'];
+const pad=n=>String(n).padStart(2,'0');
+const key=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+let D={},db=null,cur=new Date(),sel=key(new Date()),tab='notes',urls=[];
+cur.setDate(1);
+/* storage */
+function openDB(){return new Promise(r=>{try{const q=indexedDB.open('mycal',1);q.onupgradeneeded=()=>q.result.createObjectStore('days');q.onsuccess=()=>{db=q.result;r()};q.onerror=()=>r()}catch(e){r()}})}
+function loadAll(){return new Promise(r=>{if(!db)return r();const o=db.transaction('days').objectStore('days'),c=o.openCursor();c.onsuccess=()=>{const x=c.result;if(x){D[x.key]=x.value;x.continue()}else r()};c.onerror=()=>r()})}
+function save(k,raw){if(!raw&&D[k])D[k].u=Date.now();try{if(db)db.transaction('days','readwrite').objectStore('days').put(D[k],k)}catch(e){}if(!raw)syncSoon()}
+const day=k=>D[k]||(D[k]={notes:'',events:[],rem:[],recs:[],imgs:[]});
+function parse(k){const p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+function eventsOn(k){const out=[],t=parse(k);
+ for(const o in D)for(const e of D[o].events){
+  if(o==k){out.push({...e,o});continue}
+  if(!e.rep||e.rep=='none'||o>k)continue;const s=parse(o);let m=false;
+  if(e.rep=='daily')m=true;else if(e.rep=='weekly')m=s.getDay()==t.getDay();else if(e.rep=='monthly')m=s.getDate()==t.getDate();else if(e.rep=='yearly')m=s.getDate()==t.getDate()&&s.getMonth()==t.getMonth();
+  if(m)out.push({...e,o})}
+ return out}
+function has(k){const d=D[k];return {n:!!(d&&d.notes&&d.notes.trim()),r:d?d.rem.length:0,v:d?d.recs.length:0,i:d?d.imgs.length:0,ev:eventsOn(k),m:d&&d.mood}}
+/* calendar */
+function renderCal(){
+ $('#mt').textContent=MN[cur.getMonth()]+' '+cur.getFullYear();
+ let h=['S','M','T','W','T','F','S'].map(x=>`<div class="dow">${x}</div>`).join('');
+ const st=new Date(cur);st.setDate(1-cur.getDay());const tk=key(new Date());
+ for(let i=0;i<42;i++){const d=new Date(st);d.setDate(st.getDate()+i);const k=key(d),x=has(k);
+  let dots='';(x.ev||[]).slice(0,3).forEach(e=>dots+=`<i style="background:${e.color}"></i>`);
+  if(x.r)dots+='<i style="background:#d9822b"></i>';if(x.n)dots+='<i style="background:var(--mut)"></i>';if(x.v)dots+='<i style="background:#8e44ad"></i>';if(x.i)dots+='<i style="background:#2a6fdb"></i>';
+  h+=`<div class="cell${d.getMonth()!=cur.getMonth()?' o':''}${k==tk?' t':''}${k==sel?' s':''}" data-k="${k}"><span class="n">${d.getDate()}</span><div class="dots">${dots}</div>${x.m?'<span style="font-size:11px;line-height:1">'+x.m+'</span>':''}</div>`}
+ $('#g').innerHTML=h;
+ document.querySelectorAll('.cell').forEach(c=>c.onclick=()=>{sel=c.dataset.k;const p=sel.split('-');if(+p[1]-1!=cur.getMonth()){cur=new Date(+p[0],+p[1]-1,1)}renderCal();renderSheet()});
+ renderUp()}
+function renderUp(){
+ const now=Date.now(),L=[];
+ for(const k in D)D[k].rem.forEach(r=>{if(r.done)return;const t=new Date(k+'T'+(r.time||'09:00')).getTime();if(t>=now-864e5)L.push({k,r,t})});
+ L.sort((a,b)=>a.t-b.t);
+ $('#upl').innerHTML=L.slice(0,6).map(x=>`<div class="item"><div class="b">${esc(x.r.title)}<small>${x.k} · ${x.r.time}</small></div></div>`).join('')||'<div class="mut">Nothing pending.</div>'}
+/* day sheet */
+function fmt(k){const p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function renderSheet(){
+ urls.forEach(u=>URL.revokeObjectURL(u));urls=[];
+ const d=day(sel),T=[['notes','Notes'],['events','Events'],['rem','Reminders'],['recs','Voice'],['imgs','Photos']];
+ let h=`<h2>${fmt(sel)}</h2><div class="tabs">${T.map(t=>`<button data-t="${t[0]}" class="${tab==t[0]?'a':''}">${t[1]}${t[0]!='notes'&&d[t[0]].length?' ('+d[t[0]].length+')':''}</button>`).join('')}</div>`;
+ if(tab=='notes')h+=`<div class="row">${['😀','🙂','😐','🙁','😢','😡','😴'].map(m=>`<button class="mo${d.mood==m?' a':''}" data-m="${m}">${m}</button>`).join('')}</div><textarea id="nt" placeholder="Write about your day…">${esc(d.notes)}</textarea>`;
+ if(tab=='events')h+=`<div class="row"><input id="et" placeholder="Event title"></div><div class="row"><input id="es" type="time"><input id="ee" type="time"></div><div class="row"><input id="el" placeholder="Location (optional)"></div><div class="row"><select id="er"><option value="none">Doesn’t repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select><select id="ea2"><option value="0">No alert</option><option value="10">10 min before</option><option value="30">30 min before</option><option value="60">1 hour before</option></select></div><div class="row" id="cp">${COL.map((c,i)=>`<span class="sw" data-c="${c}" style="background:${c};${i==0?'outline:2px solid var(--tx)':''}"></span>`).join('')}<button class="p" id="ea" style="margin-left:auto">Add</button></div>`+
+  eventsOn(sel).sort((a,b)=>(a.s||'').localeCompare(b.s||'')).map(e=>`<div class="item"><span class="sw" style="background:${e.color}"></span><div class="b">${esc(e.title)}<small>${e.s?e.s+(e.e?' – '+e.e:''):'All day'}${e.l?' · 📍 '+esc(e.l):''}${e.rep&&e.rep!='none'?' · 🔁 '+e.rep:''}${e.al?' · 🔔 '+e.al+'m':''}</small></div><button class="x" data-del="events" data-o="${e.o}" data-id="${e.id}">×</button></div>`).join('');
+ if(tab=='rem')h+=`<div class="row"><input id="rt" placeholder="Remind me to…"><input id="rm" type="time" style="width:120px" value="09:00"></div><div class="row"><button class="p" id="ra" style="width:100%">Add reminder</button></div><div class="mut">Alerts appear while the app is open.</div>`+
+  d.rem.slice().sort((a,b)=>a.time.localeCompare(b.time)).map(r=>`<div class="item${r.done?' d':''}"><input type="checkbox" style="width:auto" data-chk="${r.id}" ${r.done?'checked':''}><div class="b">${esc(r.title)}<small>${r.time}</small></div><button class="x" data-del="rem" data-id="${r.id}">×</button></div>`).join('');
+ if(tab=='recs'){h+=`<div class="row"><button class="rec" id="rb" style="flex:1">● Record</button><button id="ru">Upload audio</button><input type="file" id="rf" accept="audio/*" hidden></div><div class="mut" id="rs"></div>`;
+  d.recs.forEach(r=>{if(!r.blob){h+='<div class="item mut">⏳ Downloading recording…</div>';return}const u=URL.createObjectURL(r.blob);urls.push(u);h+=`<div class="item" style="display:block"><div style="display:flex;align-items:center"><div class="b">${esc(r.name)}<small>${r.at}</small></div><button class="x" data-del="recs" data-id="${r.id}">×</button></div><audio controls src="${u}"></audio></div>`})}
+ if(tab=='imgs'){h+=`<div class="row"><button class="p" id="ib" style="width:100%">+ Add photos</button><input type="file" id="if" accept="image/*" multiple hidden></div><div class="imgs">`;
+  d.imgs.forEach(r=>{if(!r.blob){h+='<div class="mut">⏳</div>';return}const u=URL.createObjectURL(r.blob);urls.push(u);h+=`<div><img src="${u}" alt=""><button class="x" data-del="imgs" data-id="${r.id}">×</button></div>`});h+='</div>'}
+ $('#sh').innerHTML=h;wire()}
+function wire(){
+ const d=day(sel);
+ document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{if(rec)return;tab=b.dataset.t;renderSheet()});
+ document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(!confirm('Delete this?'))return;const o=b.dataset.o||sel,dd=day(o);dd[b.dataset.del]=dd[b.dataset.del].filter(x=>x.id!=b.dataset.id);(dd.del=dd.del||[]).push(b.dataset.id);save(o);renderSheet();renderCal()});
+ document.querySelectorAll('[data-chk]').forEach(b=>b.onchange=()=>{const r=d.rem.find(x=>x.id==b.dataset.chk);r.done=b.checked;save(sel);renderSheet();renderUp()});
+ if($('#nt'))$('#nt').oninput=e=>{d.notes=e.target.value;clearTimeout(wire.t);wire.t=setTimeout(()=>{save(sel);renderCal()},400)};
+ document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{d.mood=d.mood==b.dataset.m?'':b.dataset.m;save(sel);renderSheet();renderCal()});
+ if($('#ea')){let col=COL[0];document.querySelectorAll('.sw[data-c]').forEach(s=>s.onclick=()=>{col=s.dataset.c;document.querySelectorAll('.sw[data-c]').forEach(x=>x.style.outline='');s.style.outline='2px solid var(--tx)'});
+  $('#ea').onclick=()=>{const t=$('#et').value.trim();if(!t)return;d.events.push({id:uid(),title:t,s:$('#es').value,e:$('#ee').value,l:$('#el').value.trim(),rep:$('#er').value,al:+$('#ea2').value,color:col});askNotif();save(sel);renderSheet();renderCal()}}
+ if($('#ra'))$('#ra').onclick=()=>{const t=$('#rt').value.trim();if(!t)return;d.rem.push({id:uid(),title:t,time:$('#rm').value||'09:00',done:false,fired:false});save(sel);
+  try{if('Notification'in window&&Notification.permission=='default')Notification.requestPermission()}catch(e){}renderSheet();renderCal()};
+ if($('#rb')){$('#rb').onclick=toggleRec;$('#ru').onclick=()=>$('#rf').click();$('#rf').onchange=e=>{[...e.target.files].forEach(f=>addRec(f,f.name))}}
+ if($('#ib')){$('#ib').onclick=()=>$('#if').click();$('#if').onchange=async e=>{for(const f of e.target.files){d.imgs.push({id:uid(),blob:await shrink(f)})}save(sel);renderSheet();renderCal()}}
+ document.querySelectorAll('.imgs img').forEach(i=>i.onclick=()=>{$('#view img').src=i.src;$('#view').style.display='grid'})}
+function shrink(f){return new Promise(r=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{const s=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(u);r(b||f)},'image/jpeg',.82)};im.onerror=()=>r(f);im.src=u})}
+/* recording */
+let rec=null,chunks=[],tm=null,t0=0;
+async function toggleRec(){
+ if(rec){rec.stop();return}
+ try{const st=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];rec=new MediaRecorder(st);
+  rec.ondataavailable=e=>chunks.push(e.data);
+  rec.onstop=()=>{clearInterval(tm);st.getTracks().forEach(t=>t.stop());const b=new Blob(chunks,{type:rec.mimeType||'audio/webm'});rec=null;addRec(b,'Recording '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))};
+  rec.start();t0=Date.now();$('#rb').textContent='■ Stop';
+  tm=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);$('#rs').textContent='Recording… '+Math.floor(s/60)+':'+pad(s%60)},500)
+ }catch(e){$('#rs').textContent='Microphone unavailable here. Use “Upload audio” instead.';rec=null}}
+function addRec(b,name){const d=day(sel);d.recs.push({id:uid(),name,blob:b,at:new Date().toLocaleString()});save(sel);renderSheet();renderCal()}
+/* reminders */
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}setTimeout(()=>t.style.display='none',8000)}
+function tick(){const now=Date.now();let ch=false;
+ const tk=key(new Date());eventsOn(tk).forEach(e=>{if(!e.s||!e.al)return;const id=e.id+tk,t=new Date(tk+'T'+e.s).getTime()-e.al*6e4;if(!FIRED.has(id)&&now>=t&&now<t+36e5){FIRED.add(id);notify('📌 '+e.title+' at '+e.s,'e_'+e.id+'_'+tk)}});
+ for(const k in D)D[k].rem.forEach(r=>{if(r.done||r.fired)return;if(new Date(k+'T'+r.time).getTime()<=now){r.fired=true;ch=true;save(k);notify('⏰ '+r.title,'r_'+r.id);}});
+ if(ch)renderUp()}
+const FIRED=new Set();
+function askNotif(){try{if('Notification'in window&&Notification.permission=='default')Notification.requestPermission()}catch(e){}}
+function notify(m,tag){toast(m);try{if(Notification.permission!='granted')return;navigator.serviceWorker.getRegistration().then(r=>r?r.showNotification('Calendar',{body:m,icon:'icon-192.png',tag}):new Notification('Calendar',{body:m}))}catch(e){}}
+const b2d=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+async function exportAll(){const o={};for(const k in D){const d=D[k];o[k]={...d,recs:await Promise.all(d.recs.filter(r=>r.blob).map(async r=>({...r,blob:await b2d(r.blob)}))),imgs:await Promise.all(d.imgs.filter(r=>r.blob).map(async r=>({...r,blob:await b2d(r.blob)})))}}
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));a.download='calendar-backup-'+key(new Date())+'.json';a.click()}
+async function importAll(f){try{const o=JSON.parse(await f.text());for(const k in o){const d=o[k],c=day(k);c.notes=c.notes||d.notes||'';c.mood=c.mood||d.mood||'';
+ const add=(a,b)=>b.forEach(x=>{if(!a.some(y=>y.id==x.id))a.push(x)});add(c.events,d.events||[]);add(c.rem,d.rem||[]);
+ for(const t of['recs','imgs'])add(c[t],await Promise.all((d[t]||[]).map(async x=>({...x,blob:await(await fetch(x.blob)).blob()}))));save(k)}
+ renderCal();renderSheet();toast('Backup restored')}catch(e){toast('Could not read that file')}}
+let ip=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e});
+const pn=$('#pn');
+$('#sb').onclick=()=>{pn.style.display='block';pn.innerHTML='<div class="row"><input id="q" placeholder="Search notes, events, reminders…"><button id="qc">✕</button></div><div id="qr"></div>';$('#q').focus();$('#qc').onclick=()=>pn.style.display='none';
+ $('#q').oninput=e=>{const q=e.target.value.toLowerCase().trim(),L=[];if(q)for(const k in D){const d=D[k];if(d.notes&&d.notes.toLowerCase().includes(q))L.push([k,'📝',d.notes.slice(0,80)]);d.events.forEach(v=>(v.title+' '+(v.l||'')).toLowerCase().includes(q)&&L.push([k,'📌',v.title]));d.rem.forEach(v=>v.title.toLowerCase().includes(q)&&L.push([k,'⏰',v.title]))}
+  L.sort((a,b)=>b[0].localeCompare(a[0]));$('#qr').innerHTML=L.slice(0,40).map(r=>`<div class="item" data-go="${r[0]}"><div class="b">${r[1]} ${esc(r[2])}<small>${r[0]}</small></div></div>`).join('')||(q?'<div class="mut">No matches.</div>':'');
+  document.querySelectorAll('[data-go]').forEach(i=>i.onclick=()=>{sel=i.dataset.go;cur=parse(sel);cur.setDate(1);pn.style.display='none';renderCal();renderSheet()})}};
+$('#mn').onclick=()=>{pn.style.display='block';pn.innerHTML=`<div class="row"><button id="mx" style="flex:1">⬇ Backup</button><button id="mi" style="flex:1">⬆ Restore</button></div><div class="row"><button id="mpush" style="flex:1">🔔 ${localStorage.getItem('push')=='1'?'Push is on':'Enable push alerts'}</button></div><div class="row"><button id="msync" style="flex:1">☁ ${cloud()?'Online sync is on':'Sync online'}</button></div><div class="row"><button id="mth" style="flex:1">🌓 Theme</button>${ip?'<button id="mp" class="p" style="flex:1">Install app</button>':''}<button id="mc">✕</button></div><input type="file" id="mf" accept=".json" hidden><div class="mut">Backup saves everything, including photos and recordings, to one file.</div>`;
+ $('#mc').onclick=()=>pn.style.display='none';$('#mpush').onclick=()=>enablePush();$('#msync').onclick=openSync;$('#mx').onclick=exportAll;$('#mi').onclick=()=>$('#mf').click();$('#mf').onchange=e=>e.target.files[0]&&importAll(e.target.files[0]);
+ $('#mth').onclick=()=>{const r=document.documentElement,dk=r.dataset.theme?r.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dk?'light':'dark'};
+ if($('#mp'))$('#mp').onclick=()=>{ip.prompt();pn.style.display='none'}};
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* Firebase Cloud Messaging: background alerts */
+const FBOK=()=>self.FB_CONFIG&&!/^PASTE/.test(self.FB_CONFIG.apiKey);
+let fb=null,st=null,fbp=null;
+const loadScript=u=>new Promise((r,j)=>{const x=document.createElement('script');x.src=u;x.onload=r;x.onerror=j;document.head.appendChild(x)});
+function fbInit(){return fbp||(fbp=fbInit0().catch(e=>{fbp=null;throw e}))}
+async function fbInit0(){if(!FBOK())throw new Error('config');
+ const B='https://www.gstatic.com/firebasejs/10.12.2/firebase-';
+ for(const n of['app','auth','firestore','messaging'])await loadScript(B+n+'-compat.js');
+ firebase.initializeApp(self.FB_CONFIG);
+ await new Promise(r=>{const un=firebase.auth().onAuthStateChanged(x=>{un();r()})});const u=firebase.auth().currentUser||(await firebase.auth().signInAnonymously()).user;
+ fb={uid:u.uid,user:u,db:firebase.firestore(),m:(()=>{try{return firebase.messaging()}catch(e){}})()};return fb}
+async function enablePush(silent){const say=m=>silent||toast(m);try{
+ if(!('Notification'in window)||!('serviceWorker'in navigator))return say('Push is not supported in this browser');
+ if(silent&&Notification.permission!='granted')return;
+ if(Notification.permission!='granted'&&await Notification.requestPermission()!='granted')return say('Notifications are blocked');
+ const f=await fbInit(),reg=await navigator.serviceWorker.ready;
+ const t=await f.m.getToken({vapidKey:self.VAPID_KEY,serviceWorkerRegistration:reg});
+ if(!t)return say('Could not get a push token');
+ await f.db.doc('devices/'+f.uid).set({tokens:firebase.firestore.FieldValue.arrayUnion(t)},{merge:true});
+ localStorage.setItem('push','1');await syncAlerts();say('Push alerts are on for this device')
+ }catch(e){say(e.message=='config'?'Add your Firebase keys to firebase-config.js first':'Push setup failed: '+(e.code||e.message))}}
+function syncSoon(){clearTimeout(st);st=setTimeout(()=>{if(localStorage.getItem('push')=='1')syncAlerts().catch(()=>{});if(cloud())fbInit().then(pushAll).catch(()=>{})},1500)}
+async function syncAlerts(){const f=await fbInit(),want={},now=Date.now();
+ for(const k in D)D[k].rem.forEach(r=>{if(r.done)return;const t=new Date(k+'T'+r.time).getTime();if(t>now)want['r_'+r.id]={fireAt:t,body:'⏰ '+r.title}});
+ for(let i=0;i<60;i++){const d=new Date();d.setDate(d.getDate()+i);const k=key(d);eventsOn(k).forEach(e=>{if(!e.s||!e.al)return;const t=new Date(k+'T'+e.s).getTime()-e.al*6e4;if(t>now)want['e_'+e.id+'_'+k]={fireAt:t,body:'📌 '+e.title+' at '+e.s}})}
+ const have=await f.db.collection('alerts').where('uid','==',f.uid).get(),b=f.db.batch();
+ have.forEach(d=>{if(!want[d.id.slice(f.uid.length+1)])b.delete(d.ref)});
+ for(const id in want)b.set(f.db.doc('alerts/'+f.uid+'_'+id),{uid:f.uid,title:'Calendar',tag:id,...want[id]});
+ await b.commit()}
+/* Cloud sync: per-day documents in Firestore, media as chunks */
+const cloud=()=>localStorage.getItem('synckey'),BK=['events','rem','recs','imgs'];
+let unsub=null,busy=0;
+function smsg(m){localStorage.setItem('syncmsg',m);const e=$('#ss');if(e)e.textContent=m}
+function mergeDay(a,b){const nb=(b.u||0)>(a.u||0),n=nb?b:a,o=nb?a:b,del=[...new Set([...(a.del||[]),...(b.del||[])])];
+ const m={notes:n.notes||'',mood:n.mood||'',u:Math.max(a.u||0,b.u||0),del};
+ for(const t of BK){const mp={};[...(o[t]||[]),...(n[t]||[])].forEach(x=>{if(del.includes(x.id))return;const p=mp[x.id];mp[x.id]=p&&p.blob&&!x.blob?{...x,blob:p.blob}:x});m[t]=Object.values(mp)}
+ return m}
+async function upMedia(f,x){const du=await b2d(x.blob),CH=700000,n=Math.ceil(du.length/CH)||1,c='sync/'+cloud()+'/media/';
+ for(let i=0;i<n;i++)await f.db.doc(c+x.id+'_'+i).set({i,n,data:du.slice(i*CH,(i+1)*CH)});x.p=1}
+async function dnMedia(f,x){const c='sync/'+cloud()+'/media/',d0=await f.db.doc(c+x.id+'_0').get();if(!d0.exists)return;
+ const n=d0.data().n;let s=d0.data().data;for(let i=1;i<n;i++)s+=(await f.db.doc(c+x.id+'_'+i).get()).data().data;x.blob=await(await fetch(s)).blob()}
+async function dnAll(f,k){let ch=false;for(const t of['recs','imgs'])for(const x of D[k][t])if(!x.blob&&x.p){try{await dnMedia(f,x);ch=true}catch(e){}}
+ if(ch){save(k,true);if(k==sel)renderSheet()}}
+async function pushDay(f,k){const d=D[k];
+ for(const t of['recs','imgs'])for(const x of d[t])if(x.blob&&!x.p)await upMedia(f,x);
+ const o={u:d.u||1,notes:d.notes||'',mood:d.mood||'',del:d.del||[]};
+ for(const t of BK)o[t]=d[t].map(({blob,...r})=>r);
+ await f.db.doc('sync/'+cloud()+'/days/'+k).set(o);save(k,true)}
+async function pushAll(f){if(busy){busy=2;return}busy=1;
+ try{const lq=+localStorage.getItem('lastpush')||0;let mx=lq;
+  for(const k in D){const u=D[k].u||1;if(u>lq){await pushDay(f,k);mx=Math.max(mx,u)}}
+  localStorage.setItem('lastpush',mx);smsg('Last synced '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))
+ }catch(e){smsg('Sync paused: '+(e.code=='permission-denied'?'update the Firestore rules':e.code||e.message))}
+ finally{const again=busy==2;busy=0;if(again)syncSoon()}}
+async function startCloud(){if(!cloud())return;try{const f=await fbInit();
+ const lp=+localStorage.getItem('lastpull')||0;if(unsub)unsub();
+ unsub=f.db.collection('sync/'+cloud()+'/days').where('u','>',lp).onSnapshot(sn=>{let mx=lp,n=0;
+  sn.docChanges().forEach(c=>{if(c.doc.metadata.hasPendingWrites)return;const k=c.doc.id,r=c.doc.data();mx=Math.max(mx,r.u||0);n++;
+   D[k]=D[k]?mergeDay(D[k],r):{...r};save(k,true);dnAll(f,k)});
+  if(n){localStorage.setItem('lastpull',mx);renderCal();if(!(document.activeElement&&document.activeElement.id=='nt'))renderSheet()}},
+  e=>smsg('Sync paused: '+(e.code=='permission-denied'?'update the Firestore rules':e.code||e.message)));
+ for(const k in D)dnAll(f,k);await pushAll(f)}catch(e){smsg('Sync paused: '+(e.message=='config'?'add Firebase keys':e.code||e.message))}}
+function openSync(){const key=cloud();
+ pn.innerHTML=key?`<div class="mut">Online sync is on. On another device, open ⋮ → Sync online and enter this key. Keep it private.</div><div class="row" style="margin-top:6px"><input id="sk" readonly value="${key}"><button id="sy">Copy</button></div><div class="row"><button class="p" id="sn" style="flex:1">Sync now</button><button id="so" style="flex:1">Turn off</button><button id="sx">✕</button></div><div class="mut" id="ss">${esc(localStorage.getItem('syncmsg')||'')}</div>`:
+ `<div class="row"><button class="p" id="st1" style="flex:1">Start syncing this device</button><button id="sx">✕</button></div><div class="mut">Or join an existing calendar with its sync key:</div><div class="row" style="margin-top:6px"><input id="sj" placeholder="Paste sync key"><button id="sjb">Join</button></div><div class="mut" id="ss"></div>`;
+ $('#sx').onclick=()=>pn.style.display='none';
+ if(key){$('#sy').onclick=()=>{try{navigator.clipboard.writeText(key);smsg('Key copied')}catch(e){$('#sk').select()}};
+  $('#sn').onclick=async()=>{smsg('Syncing…');await startCloud()};
+  $('#so').onclick=()=>{if(!confirm('Turn off online sync on this device? Your data stays here.'))return;if(unsub)unsub();['synckey','lastpull','lastpush','syncmsg'].forEach(x=>localStorage.removeItem(x));openSync()}}
+ else{const go=k=>{k=k.trim();if(k.length<24)return smsg('That key looks too short');localStorage.setItem('synckey',k);localStorage.removeItem('lastpull');localStorage.removeItem('lastpush');startCloud();openSync()};
+  $('#st1').onclick=()=>{const a=new Uint8Array(20);crypto.getRandomValues(a);go([...a].map(x=>x.toString(16).padStart(2,'0')).join(''))};
+  $('#sjb').onclick=()=>go($('#sj').value)}}
+function net(){$('#off').style.display=navigator.onLine?'none':'block'}
+addEventListener('online',()=>{net();syncSoon()});addEventListener('offline',net);net();
+/* init */
+$('#pv').onclick=()=>{cur.setMonth(cur.getMonth()-1);renderCal()};
+$('#nx').onclick=()=>{cur.setMonth(cur.getMonth()+1);renderCal()};
+$('#td').onclick=()=>{cur=new Date();cur.setDate(1);sel=key(new Date());renderCal();renderSheet()};
+$('#view').onclick=()=>$('#view').style.display='none';
+$('#toast').onclick=()=>$('#toast').style.display='none';
+(async()=>{await openDB();await loadAll();renderCal();renderSheet();tick();setInterval(tick,15000);if(localStorage.getItem('push')=='1')enablePush(true);startCloud()})();
+</script></body></html>
