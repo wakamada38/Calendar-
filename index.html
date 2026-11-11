@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Calendar</title>
+<script src="firebase-config.js"></script><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1f7a52"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d2b24;--mut:#6b7a72;--ac:#1f7a52;--acs:#e0f1e8;--bd:#e3e1d9;--red:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121815;--card:#1b241f;--tx:#e8efe9;--mut:#93a49a;--ac:#4cc38a;--acs:#21392d;--bd:#2c3a32;--red:#ef7a6d}}
+:root[data-theme=dark]{--bg:#121815;--card:#1b241f;--tx:#e8efe9;--mut:#93a49a;--ac:#4cc38a;--acs:#21392d;--bd:#2c3a32;--red:#ef7a6d}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:640px;margin:0 auto;padding:12px 12px 80px}
+button,input,textarea{font:inherit;color:inherit}
+button{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;cursor:pointer}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+input,textarea{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:9px 10px}
+textarea{min-height:170px;resize:vertical}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.top h1{flex:1;font-size:19px;margin:0;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{text-align:center;font-size:11px;color:var(--mut);padding:2px 0}
+.cell{aspect-ratio:1/1.05;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:3px;display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative}
+.cell.o{opacity:.4}.cell.t .n{background:var(--ac);color:#fff}.cell.s{outline:2px solid var(--ac)}
+.n{font-size:13px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
+.dots{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;margin-top:2px}
+.dots i{width:6px;height:6px;border-radius:50%;display:block}
+.sheet{margin-top:14px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px}
+.sheet h2{margin:0 0 8px;font-size:17px}
+.tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:10px}
+.tabs button{flex:1;white-space:nowrap;padding:7px 8px;font-size:13px}
+.tabs button.a{background:var(--acs);border-color:var(--ac);color:var(--ac)}
+.row{display:flex;gap:6px;margin-bottom:6px}.row>*{min-width:0}
+.item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;margin-top:6px}
+.item .b{flex:1;min-width:0;overflow-wrap:anywhere}.item small{color:var(--mut);display:block}
+.item.d .b{text-decoration:line-through;opacity:.55}
+.x{background:none;border:none;color:var(--red);padding:4px 8px;font-size:18px}
+.sw{width:14px;height:14px;border-radius:50%;flex:none}
+.imgs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.imgs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer}
+.imgs div{position:relative}.imgs .x{position:absolute;top:2px;right:2px;background:#000a;color:#fff;border-radius:50%;padding:0 7px}
+audio{width:100%;margin-top:4px}
+.rec{background:var(--red);color:#fff;border-color:var(--red)}
+.mut{color:var(--mut);font-size:13px}
+#toast{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top,0px));max-width:616px;margin:auto;background:var(--ac);color:#fff;padding:12px 14px;border-radius:12px;display:none;z-index:9;box-shadow:0 4px 18px #0005}
+#view{position:fixed;inset:0;background:#000d;display:none;place-items:center;z-index:8}#view img{max-width:96%;max-height:92%}
+select{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:9px 6px;color:inherit;font:inherit}.top h1{font-size:17px}.top button{padding:8px 9px}.mo{flex:1;padding:6px 0;font-size:18px}.mo.a{background:var(--acs);border-color:var(--ac)}#off{display:none;text-align:center;font-size:12px;color:var(--mut);margin:-4px 0 8px}#mt{cursor:pointer}.sw.nc{width:28px;height:28px;cursor:pointer}.nc.on{outline:2px solid var(--tx);outline-offset:2px}#ncp{width:36px;height:30px;padding:0;border:none;background:none;margin-left:auto}#nt{min-height:170px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;overflow-wrap:anywhere;outline:none;white-space:pre-wrap}#nt:empty:before{content:attr(data-ph);color:var(--mut)}#nt:focus{border-color:var(--ac)}#tb button{flex:none;min-width:40px}#tb select{flex:1}.n.h{color:#d93025;font-weight:600}.hn{font-size:9px;line-height:1.15;color:#d93025;text-align:center;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.hn.o{color:var(--mut)}.cell{overflow:hidden}.up{margin-top:14px}.up h3{font-size:14px;margin:0 0 4px;color:var(--mut)}
+</style></head><body>
+<div id="toast"></div><div id="view"><img alt=""></div>
+<div class="top"><button id="pv">‹</button><h1 id="mt"></h1><button id="nx">›</button><button id="td">Today</button><button id="sb">🔍</button><button id="mn">⋮</button></div><div class="sheet" id="pn" style="display:none;margin:0 0 10px"></div>
+<div class="sheet" id="bkn" style="display:none;margin:0 0 10px"></div><div id="off">Offline · everything is saved on this device</div><div class="grid" id="g"></div>
+<div class="sheet" id="sh"></div>
+<div class="up"><h3>Upcoming reminders</h3><div id="upl"></div><h3 style="margin-top:12px">Upcoming holidays</h3><div id="uph"></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const COL=['#1f7a52','#2a6fdb','#d9822b','#c0392b','#8e44ad','#16a2b8'];
+const pad=n=>String(n).padStart(2,'0');
+const key=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+let D={},db=null,cur=new Date(),sel=key(new Date()),tab='notes',urls=[];
+cur.setDate(1);
+/* storage */
+function openDB(){return new Promise(r=>{
+ const fallback=()=>{try{const q2=indexedDB.open('mycal');q2.onsuccess=()=>{db=q2.result;r()};q2.onerror=()=>r()}catch(e){r()}};
+ try{const q=indexedDB.open('mycal',2);
+  q.onupgradeneeded=()=>{const x=q.result;if(!x.objectStoreNames.contains('days'))x.createObjectStore('days');if(!x.objectStoreNames.contains('bk'))x.createObjectStore('bk')};
+  q.onsuccess=()=>{db=q.result;db.onversionchange=()=>{db.close();db=null};r()};
+  q.onerror=fallback;q.onblocked=()=>{}}catch(e){fallback()}})}
+function loadAll(){return new Promise(r=>{try{if(!db)return r();const c=db.transaction('days').objectStore('days').openCursor();c.onsuccess=()=>{const x=c.result;if(x){D[x.key]=x.value;x.continue()}else r()};c.onerror=()=>r()}catch(e){r()}})}
+let wsT=0;function warnSave(){if(Date.now()-wsT<30000)return;wsT=Date.now();toast('⚠ Could not save on this device. Make a backup now: ⋮ → Backup.')}
+function save(k,raw){if(!raw&&D[k])D[k].u=Date.now();try{if(!db)throw 0;const t=db.transaction('days','readwrite');t.objectStore('days').put(D[k],k);t.onerror=t.onabort=warnSave}catch(e){warnSave()}mirror();if(!raw)syncSoon()}
+const day=k=>D[k]||(D[k]={notes:'',events:[],rem:[],recs:[],imgs:[]});
+function parse(k){const p=k.split('-'),d=new Date(+p[0],+p[1]-1,+p[2]);d.setFullYear(+p[0]);return d}
+function eventsOn(k){const out=[],t=parse(k);
+ for(const o in D)for(const e of D[o].events){
+  if(o==k){out.push({...e,o});continue}
+  if(!e.rep||e.rep=='none'||o>k)continue;const s=parse(o);let m=false;
+  if(e.rep=='daily')m=true;else if(e.rep=='weekly')m=s.getDay()==t.getDay();else if(e.rep=='monthly')m=s.getDate()==t.getDate();else if(e.rep=='yearly')m=s.getDate()==t.getDate()&&s.getMonth()==t.getMonth();
+  if(m)out.push({...e,o})}
+ return out}
+function has(k){const d=D[k];return {n:!!(d&&d.notes&&d.notes.trim()),r:d?d.rem.length:0,v:d?d.recs.length:0,i:d?d.imgs.length:0,ev:eventsOn(k).concat(gOn(k)),h:hOn(k),m:d&&d.mood}}
+/* calendar */
+function renderCal(){
+ $('#mt').textContent=MN[cur.getMonth()]+' '+cur.getFullYear()+' ▾';
+ let h=['S','M','T','W','T','F','S'].map(x=>`<div class="dow">${x}</div>`).join('');
+ const st=new Date(cur);st.setDate(1-cur.getDay());const tk=key(new Date());
+ for(let i=0;i<42;i++){const d=new Date(st);d.setDate(st.getDate()+i);const k=key(d),x=has(k);
+  let dots='';(x.ev||[]).slice(0,3).forEach(e=>dots+=`<i style="background:${e.color}"></i>`);
+  if(x.h&&x.h.some(z=>z.t=='p'))dots='<i style="background:#d93025"></i>'+dots;if(x.r)dots+='<i style="background:#d9822b"></i>';if(x.n)dots+='<i style="background:var(--mut)"></i>';if(x.v)dots+='<i style="background:#8e44ad"></i>';if(x.i)dots+='<i style="background:#2a6fdb"></i>';
+  h+=`<div class="cell${d.getMonth()!=cur.getMonth()?' o':''}${k==tk?' t':''}${k==sel?' s':''}" data-k="${k}"><span class="n${x.h&&x.h.length&&x.h[0].t=='p'?' h':''}">${d.getDate()}</span>${x.h&&x.h.length?`<span class="hn${x.h[0].t=='o'?' o':''}">${esc(x.h[0].n)}</span>`:''}<div class="dots">${dots}</div>${x.m?'<span style="font-size:11px;line-height:1">'+x.m+'</span>':''}</div>`}
+ $('#g').innerHTML=h;
+ document.querySelectorAll('.cell').forEach(c=>c.onclick=()=>{sel=c.dataset.k;const p=sel.split('-');if(+p[1]-1!=cur.getMonth()){cur=new Date(+p[0],+p[1]-1,1)}renderCal();renderSheet()});
+ renderUp()}
+function renderUp(){
+ const now=Date.now(),L=[];
+ for(const k in D)D[k].rem.forEach(r=>{if(r.done)return;const t=new Date(k+'T'+(r.time||'09:00')).getTime();if(t>=now-864e5)L.push({k,r,t})});
+ L.sort((a,b)=>a.t-b.t);
+ $('#upl').innerHTML=L.slice(0,6).map(x=>`<div class="item"><div class="b">${esc(x.r.title)}<small>${x.k} · ${x.r.time}</small></div></div>`).join('')||'<div class="mut">Nothing pending.</div>';renderHol()}
+/* day sheet */
+function fmt(k){const p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function renderSheet(){flushNote();nsel=null;
+ urls.forEach(u=>URL.revokeObjectURL(u));urls=[];
+ const d=day(sel),L=isLocked(sel),T=[['notes','Notes'],['events','Events'],['rem','Reminders'],['recs','Voice'],['imgs','Photos']];
+ const X=(t,id,o)=>L||(o&&isLocked(o))?'<span title="Locked">🔒</span>':`<button class="x" data-del="${t}"${o?` data-o="${o}"`:''} data-id="${id}">×</button>`;
+ let h=`<div class="row" style="align-items:center"><h2 style="flex:1;margin:0">${fmt(sel)}</h2><button id="lk">${L?'🔒 Locked':'🔓 Lock day'}</button></div>${hOn(sel).map(z=>`<div style="margin:2px 0 8px;font-size:13px;color:${z.t=='p'?'#d93025':'var(--mut)'}">${z.t=='p'?'🎉':'✨'} ${esc(z.n)}</div>`).join('')}<div class="tabs" style="margin-top:8px">${T.map(t=>`<button data-t="${t[0]}" class="${tab==t[0]?'a':''}">${t[1]}${t[0]!='notes'&&d[t[0]].length?' ('+d[t[0]].length+')':''}</button>`).join('')}</div>`;
+ if(L)h+='<div class="mut" style="margin-bottom:8px">This day is locked. Tap 🔒 Locked to unlock it before editing or deleting.</div>';
+ if(tab=='notes')h+=`<div class="row">${['😀','🙂','😐','🙁','😢','😡','😴'].map(m=>`<button class="mo${d.mood==m?' a':''}" data-m="${m}"${L?' disabled':''}>${m}</button>`).join('')}</div>${L?'':`<div class="row" id="tb"><button data-f="bold"><b>B</b></button><button data-f="italic"><i>I</i></button><button data-f="underline"><u>U</u></button><select id="nf"><option value="">Font</option>${FONTS.map((f,i)=>`<option value="${i}">${f[0]}</option>`).join('')}</select><select id="ns"><option value="">Size</option>${SIZES.map((z,i)=>`<option value="${i}">${z}</option>`).join('')}</select></div><div class="row" style="align-items:center;margin-bottom:6px">${NCOL.map(c=>`<span class="sw nc${(d.nc||'')==c?' on':''}" data-nc="${c}" title="${c?'Text colour':'Default colour / clear formatting'}" style="background:${c||'var(--tx)'}"></span>`).join('')}<input type="color" id="ncp" value="${d.nc||'#1d2b24'}"></div><div class="mut" style="margin-bottom:6px">Select words to change just them. With nothing selected, changes apply to the whole note.</div>`}<div id="nt" data-ph="Write about your day…" contenteditable="${L?'false':'true'}" style="${d.nc?'color:'+esc(d.nc)+';':''}${d.nf?'font-family:'+esc(d.nf)+';':''}${d.nz?'font-size:'+(+d.nz)+'px;':''}">${noteHtml(d)}</div>${(d.hist||[]).length?`<div class="row" style="margin-top:6px"><button id="vh">🕘 Earlier versions (${d.hist.length})</button></div>`:''}`;
+ if(tab=='events'){if(!L)h+=`<div class="row"><input id="et" placeholder="Event title"></div><div class="row"><input id="es" type="time"><input id="ee" type="time"></div><div class="row"><input id="el" placeholder="Location (optional)"></div><div class="row"><select id="er"><option value="none">Doesn’t repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select><select id="ea2"><option value="0">No alert</option><option value="10">10 min before</option><option value="30">30 min before</option><option value="60">1 hour before</option></select></div><div class="row" id="cp">${COL.map((c,i)=>`<span class="sw" data-c="${c}" style="background:${c};${i==0?'outline:2px solid var(--tx)':''}"></span>`).join('')}<button class="p" id="ea" style="margin-left:auto">Add</button></div>`;
+  h+=eventsOn(sel).sort((a,b)=>(a.s||'').localeCompare(b.s||'')).map(e=>`<div class="item"><span class="sw" style="background:${e.color}"></span><div class="b">${esc(e.title)}<small>${e.s?e.s+(e.e?' – '+e.e:''):'All day'}${e.l?' · 📍 '+esc(e.l):''}${e.rep&&e.rep!='none'?' · 🔁 '+e.rep:''}${e.al?' · 🔔 '+e.al+'m':''}</small></div>${X('events',e.id,e.o)}</div>`).join('')+gOn(sel).map(g=>`<div class="item"><span class="sw" style="background:${g.color}"></span><div class="b">${g.task?(g.done?'☑ ':'☐ '):''}${esc(g.title)}<small>${g.time?g.time+(g.end?' – '+g.end:''):'All day'} · ${esc(g.acc)}${g.task?' · Tasks':''}</small></div><span class="mut">Google</span></div>`).join('')}
+ if(tab=='rem'){if(!L)h+=`<div class="row"><input id="rt" placeholder="Remind me to…"><input id="rm" type="time" style="width:120px" value="09:00"></div><div class="row"><button class="p" id="ra" style="width:100%">Add reminder</button></div>`;
+  h+=d.rem.slice().sort((a,b)=>a.time.localeCompare(b.time)).map(r=>`<div class="item${r.done?' d':''}"><input type="checkbox" style="width:auto" data-chk="${r.id}" ${r.done?'checked':''}${L?' disabled':''}><div class="b">${esc(r.title)}<small>${r.time}</small></div>${X('rem',r.id)}</div>`).join('')}
+ if(tab=='recs'){if(!L)h+=`<div class="row"><button class="rec" id="rb" style="flex:1">● Record</button><button id="ru">Upload audio</button><input type="file" id="rf" accept="audio/*" hidden></div><div class="mut" id="rs"></div>`;
+  d.recs.forEach(r=>{if(!r.blob){h+='<div class="item mut">⏳ Downloading recording…</div>';return}const u=URL.createObjectURL(r.blob);urls.push(u);h+=`<div class="item" style="display:block"><div style="display:flex;align-items:center"><div class="b">${esc(r.name)}<small>${r.at}</small></div>${X('recs',r.id)}</div><audio controls src="${u}"></audio></div>`})}
+ if(tab=='imgs'){if(!L)h+=`<div class="row"><button class="p" id="ib" style="width:100%">+ Add photos</button><input type="file" id="if" accept="image/*" multiple hidden></div>`;h+='<div class="imgs">';
+  d.imgs.forEach(r=>{if(!r.blob){h+='<div class="mut">⏳</div>';return}const u=URL.createObjectURL(r.blob);urls.push(u);h+=`<div><img src="${u}" alt="">${L?'':X('imgs',r.id)}</div>`});h+='</div>'}
+ $('#sh').innerHTML=h;wire()}
+function wire(){
+ const d=day(sel);
+ if($('#lk'))$('#lk').onclick=toggleLock;if($('#vh'))$('#vh').onclick=openVers;
+ document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{if(rec)return;tab=b.dataset.t;renderSheet()});
+ document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(!confirm('Delete this?'))return;const o=b.dataset.o||sel;if(isLocked(o))return toast('This day is locked');const dd=day(o);dd[b.dataset.del]=dd[b.dataset.del].filter(x=>x.id!=b.dataset.id);(dd.del=dd.del||[]).push(b.dataset.id);save(o);renderSheet();renderCal()});
+ document.querySelectorAll('[data-chk]').forEach(b=>b.onchange=()=>{const r=d.rem.find(x=>x.id==b.dataset.chk);r.done=b.checked;save(sel);renderSheet();renderUp()});
+ if($('#nt')){$('#nt').oninput=noteSave;$('#nt').onblur=flushNote;$('#nt').onpaste=e=>{e.preventDefault();document.execCommand('insertText',false,(e.clipboardData||window.clipboardData).getData('text/plain'))}}
+ document.querySelectorAll('[data-f]').forEach(b=>{b.onpointerdown=e=>e.preventDefault();b.onclick=()=>fx(b.dataset.f)});
+ const part=()=>nsel&&!nsel.collapsed;
+ document.querySelectorAll('[data-nc]').forEach(b=>{b.onpointerdown=e=>e.preventDefault();b.onclick=()=>{if(isLocked(sel))return;const c=b.dataset.nc;if(part()){c?fx('foreColor',c):fx('removeFormat')}else{d.nc=c;d.fu=Date.now();save(sel);renderSheet()}}});
+ if($('#nf'))$('#nf').onchange=e=>{const v=e.target.value;if(v==='')return;const f=FONTS[+v][1];if(part())fx('fontName',f);else{d.nf=+v==0?'':f;d.fu=Date.now();save(sel);renderSheet()}};
+ if($('#ns'))$('#ns').onchange=e=>{const v=e.target.value;if(v==='')return;if(part())fx('fontSize',SZCMD[+v]);else{d.nz=+v==1?0:SZPX[+v];d.fu=Date.now();save(sel);renderSheet()}};
+ if($('#ncp'))$('#ncp').onchange=e=>{if(isLocked(sel))return;if(part())fx('foreColor',e.target.value);else{d.nc=e.target.value;d.fu=Date.now();save(sel);renderSheet()}}
+ document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{d.mood=d.mood==b.dataset.m?'':b.dataset.m;d.mu=Date.now();save(sel);renderSheet();renderCal()});
+ if($('#ea')){let col=COL[0];document.querySelectorAll('.sw[data-c]').forEach(s=>s.onclick=()=>{col=s.dataset.c;document.querySelectorAll('.sw[data-c]').forEach(x=>x.style.outline='');s.style.outline='2px solid var(--tx)'});
+  $('#ea').onclick=()=>{const t=$('#et').value.trim();if(!t)return;d.events.push({id:uid(),title:t,s:$('#es').value,e:$('#ee').value,l:$('#el').value.trim(),rep:$('#er').value,al:+$('#ea2').value,color:col});askNotif();save(sel);renderSheet();renderCal()}}
+ if($('#ra'))$('#ra').onclick=()=>{const t=$('#rt').value.trim();if(!t)return;d.rem.push({id:uid(),title:t,time:$('#rm').value||'09:00',done:false,fired:false});save(sel);
+  try{if('Notification'in window&&Notification.permission=='default')Notification.requestPermission()}catch(e){}renderSheet();renderCal()};
+ if($('#rb')){$('#rb').onclick=toggleRec;$('#ru').onclick=()=>$('#rf').click();$('#rf').onchange=e=>{[...e.target.files].forEach(f=>addRec(f,f.name))}}
+ if($('#ib')){$('#ib').onclick=()=>$('#if').click();$('#if').onchange=async e=>{for(const f of e.target.files){d.imgs.push({id:uid(),blob:await shrink(f)})}save(sel);renderSheet();renderCal()}}
+ document.querySelectorAll('.imgs img').forEach(i=>i.onclick=()=>{$('#view img').src=i.src;$('#view').style.display='grid'})}
+function shrink(f){return new Promise(r=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{const s=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(u);r(b||f)},'image/jpeg',.82)};im.onerror=()=>r(f);im.src=u})}
+/* recording */
+let rec=null,chunks=[],tm=null,t0=0;
+async function toggleRec(){
+ if(rec){rec.stop();return}
+ try{const st=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];rec=new MediaRecorder(st);
+  rec.ondataavailable=e=>chunks.push(e.data);
+  rec.onstop=()=>{clearInterval(tm);st.getTracks().forEach(t=>t.stop());const b=new Blob(chunks,{type:rec.mimeType||'audio/webm'});rec=null;addRec(b,'Recording '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))};
+  rec.start();t0=Date.now();$('#rb').textContent='■ Stop';
+  tm=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);$('#rs').textContent='Recording… '+Math.floor(s/60)+':'+pad(s%60)},500)
+ }catch(e){$('#rs').textContent='Microphone unavailable here. Use “Upload audio” instead.';rec=null}}
+function addRec(b,name){const d=day(sel);d.recs.push({id:uid(),name,blob:b,at:new Date().toLocaleString()});save(sel);renderSheet();renderCal()}
+/* reminders */
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}setTimeout(()=>t.style.display='none',8000)}
+function tick(){const now=Date.now();let ch=false;
+ const tk=key(new Date());eventsOn(tk).forEach(e=>{if(!e.s||!e.al)return;const id=e.id+tk,t=new Date(tk+'T'+e.s).getTime()-e.al*6e4;if(!FIRED.has(id)&&now>=t&&now<t+36e5){FIRED.add(id);notify('📌 '+e.title+' at '+e.s,'e_'+e.id+'_'+tk)}});
+ for(const k in D)D[k].rem.forEach(r=>{if(r.done||r.fired)return;if(new Date(k+'T'+r.time).getTime()<=now){r.fired=true;ch=true;save(k);notify('⏰ '+r.title,'r_'+r.id);}});
+ if(ch)renderUp()}
+const FIRED=new Set();
+function askNotif(){try{if('Notification'in window&&Notification.permission=='default')Notification.requestPermission()}catch(e){}}
+function notify(m,tag){toast(m);try{if(Notification.permission!='granted')return;navigator.serviceWorker.getRegistration().then(r=>r?r.showNotification('Calendar',{body:m,icon:'icon-192.png',tag}):new Notification('Calendar',{body:m}))}catch(e){}}
+const b2d=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+async function exportAll(){const o={};for(const k in D){const d=D[k];o[k]={...d,recs:await Promise.all(d.recs.filter(r=>r.blob).map(async r=>({...r,blob:await b2d(r.blob)}))),imgs:await Promise.all(d.imgs.filter(r=>r.blob).map(async r=>({...r,blob:await b2d(r.blob)})))}}
+ const nm='calendar-backup-'+key(new Date())+'.json',bl=new Blob([JSON.stringify(o)],{type:'application/json'}),fl=new File([bl],nm,{type:'application/json'});
+ try{if(navigator.canShare&&navigator.canShare({files:[fl]})){await navigator.share({files:[fl],title:'Calendar backup'});localStorage.setItem('lastfile',Date.now());nudge();return}}catch(e){if(e.name=='AbortError')return}
+ const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=nm;a.click();localStorage.setItem('lastfile',Date.now());nudge()}
+async function importAll(f){try{const o=JSON.parse(await f.text());for(const k in o){const d=o[k],c=day(k);c.notes=c.notes||d.notes||'';c.nh=c.nh||d.nh||'';c.nc=c.nc||d.nc||'';c.nf=c.nf||d.nf||'';c.nz=c.nz||d.nz||0;c.mood=c.mood||d.mood||'';
+ const add=(a,b)=>b.forEach(x=>{if(!a.some(y=>y.id==x.id))a.push(x)});add(c.events,d.events||[]);add(c.rem,d.rem||[]);
+ for(const t of['recs','imgs'])add(c[t],await Promise.all((d[t]||[]).map(async x=>({...x,blob:await(await fetch(x.blob)).blob()}))));save(k)}
+ renderCal();renderSheet();toast('Backup restored')}catch(e){toast('Could not read that file')}}
+let ip=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e});
+const pn=$('#pn');
+$('#sb').onclick=()=>{pn.style.display='block';pn.innerHTML='<div class="row"><input id="q" placeholder="Search notes, events, reminders…"><button id="qc">✕</button></div><div id="qr"></div>';$('#q').focus();$('#qc').onclick=()=>pn.style.display='none';
+ $('#q').oninput=e=>{const q=e.target.value.toLowerCase().trim(),L=[];if(q)for(const k in D){const d=D[k];if(d.notes&&d.notes.toLowerCase().includes(q))L.push([k,'📝',d.notes.slice(0,80)]);d.events.forEach(v=>(v.title+' '+(v.l||'')).toLowerCase().includes(q)&&L.push([k,'📌',v.title]));d.rem.forEach(v=>v.title.toLowerCase().includes(q)&&L.push([k,'⏰',v.title]))}
+  L.sort((a,b)=>b[0].localeCompare(a[0]));$('#qr').innerHTML=L.slice(0,40).map(r=>`<div class="item" data-go="${r[0]}"><div class="b">${r[1]} ${esc(r[2])}<small>${r[0]}</small></div></div>`).join('')||(q?'<div class="mut">No matches.</div>':'');
+  document.querySelectorAll('[data-go]').forEach(i=>i.onclick=()=>{sel=i.dataset.go;cur=parse(sel);cur.setDate(1);pn.style.display='none';renderCal();renderSheet()})}};
+$('#mn').onclick=()=>{pn.style.display='block';pn.innerHTML=`<div class="row"><button id="mx" style="flex:1">⬇ Backup</button><button id="mi" style="flex:1">⬆ Restore</button></div><div class="row"><button id="mbk" style="flex:1">💾 Auto backup & history</button></div><div class="row"><button id="mhol" style="flex:1">🎉 Holidays</button></div><div class="row"><button id="mpush" style="flex:1">🔔 ${localStorage.getItem('push')=='1'?'Push is on':'Enable push alerts'}</button></div><div class="row"><button id="msync" style="flex:1">☁ ${cloud()?'Online sync is on':'Sync online'}</button></div><div class="row"><button id="mgoog" style="flex:1">📧 Google accounts (${gAcc().length})</button></div><div class="row"><button id="mhl" style="flex:1">🩺 App health</button></div><div class="row"><button id="mlock" style="flex:1">🔒 Lock settings</button></div><div class="row"><button id="mth" style="flex:1">🌓 Theme</button>${ip?'<button id="mp" class="p" style="flex:1">Install app</button>':''}<button id="mc">✕</button></div><input type="file" id="mf" accept=".json" hidden><div class="mut">Backup saves everything, including photos and recordings, to one file.</div>`;
+ $('#mc').onclick=()=>pn.style.display='none';$('#mpush').onclick=()=>enablePush();$('#msync').onclick=openSync;$('#mlock').onclick=openLockSet;$('#mgoog').onclick=openGoogle;$('#mbk').onclick=openBackup;$('#mhol').onclick=openHol;$('#mhl').onclick=openHealth;$('#mx').onclick=exportAll;$('#mi').onclick=()=>$('#mf').click();$('#mf').onchange=e=>e.target.files[0]&&importAll(e.target.files[0]);
+ $('#mth').onclick=()=>{const r=document.documentElement,dk=r.dataset.theme?r.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dk?'light':'dark'};
+ if($('#mp'))$('#mp').onclick=()=>{ip.prompt();pn.style.display='none'}};
+if('serviceWorker'in navigator){const had=!!navigator.serviceWorker.controller;let rld=0;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!rld){rld=1;flushNote();location.reload()}});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{})}
+/* Firebase Cloud Messaging: background alerts */
+const FBOK=()=>self.FB_CONFIG&&!/^PASTE/.test(self.FB_CONFIG.apiKey);
+let fb=null,st=null,fbp=null;
+const loadScript=u=>new Promise((r,j)=>{const x=document.createElement('script');x.src=u;x.onload=r;x.onerror=j;document.head.appendChild(x)});
+function fbInit(){return fbp||(fbp=fbInit0().catch(e=>{fbp=null;throw e}))}
+async function fbInit0(){if(!FBOK())throw new Error('config');
+ const B='https://www.gstatic.com/firebasejs/10.12.2/firebase-';
+ for(const n of['app','auth','firestore','messaging'])await loadScript(B+n+'-compat.js');
+ firebase.initializeApp(self.FB_CONFIG);
+ await new Promise(r=>{const un=firebase.auth().onAuthStateChanged(x=>{un();r()})});const u=firebase.auth().currentUser||(await firebase.auth().signInAnonymously()).user;
+ fb={uid:u.uid,user:u,db:firebase.firestore(),m:(()=>{try{return firebase.messaging()}catch(e){}})()};return fb}
+async function enablePush(silent){const say=m=>silent||toast(m);try{
+ if(!('Notification'in window)||!('serviceWorker'in navigator))return say('Push is not supported in this browser');
+ if(silent&&Notification.permission!='granted')return;
+ if(Notification.permission!='granted'&&await Notification.requestPermission()!='granted')return say('Notifications are blocked');
+ const f=await fbInit(),reg=await navigator.serviceWorker.ready;
+ const t=await f.m.getToken({vapidKey:self.VAPID_KEY,serviceWorkerRegistration:reg});
+ if(!t)return say('Could not get a push token');
+ await f.db.doc('devices/'+f.uid).set({tokens:firebase.firestore.FieldValue.arrayUnion(t)},{merge:true});
+ localStorage.setItem('push','1');await syncAlerts();say('Push alerts are on for this device')
+ }catch(e){say(e.message=='config'?'Add your Firebase keys to firebase-config.js first':'Push setup failed: '+(e.code||e.message))}}
+function syncSoon(){clearTimeout(st);st=setTimeout(()=>{if(localStorage.getItem('push')=='1')syncAlerts().catch(()=>{});if(cloud())fbInit().then(pushAll).catch(()=>{})},1500)}
+async function syncAlerts(){const f=await fbInit(),want={},now=Date.now();
+ for(const k in D)D[k].rem.forEach(r=>{if(r.done)return;const t=new Date(k+'T'+r.time).getTime();if(t>now)want['r_'+r.id]={fireAt:t,body:'⏰ '+r.title}});
+ for(let i=0;i<60;i++){const d=new Date();d.setDate(d.getDate()+i);const k=key(d);eventsOn(k).forEach(e=>{if(!e.s||!e.al)return;const t=new Date(k+'T'+e.s).getTime()-e.al*6e4;if(t>now)want['e_'+e.id+'_'+k]={fireAt:t,body:'📌 '+e.title+' at '+e.s}})}
+ const have=await f.db.collection('alerts').where('uid','==',f.uid).get(),b=f.db.batch();
+ have.forEach(d=>{if(!want[d.id.slice(f.uid.length+1)])b.delete(d.ref)});
+ for(const id in want)b.set(f.db.doc('alerts/'+f.uid+'_'+id),{uid:f.uid,title:'Calendar',tag:id,...want[id]});
+ await b.commit()}
+/* Cloud sync: per-day documents in Firestore, media as chunks */
+const cloud=()=>localStorage.getItem('synckey'),BK=['events','rem','recs','imgs'];
+let unsub=null,busy=0,ui=0;
+function smsg(m){localStorage.setItem('syncmsg',m);const e=$('#ss');if(e)e.textContent=m}
+function win(a,b,f){const x=a[f],y=b[f];if(x==null&&y==null)return(b.u||0)>(a.u||0)?b:a;if(x==null)return b;if(y==null)return a;return y>x?b:a}
+const sig=d=>JSON.stringify([d.notes,d.nh,d.mood,d.lk,d.nc,d.nf,d.nz,(d.events||[]).map(x=>x.id+x.title),(d.rem||[]).map(x=>x.id+x.done),(d.recs||[]).map(x=>x.id),(d.imgs||[]).map(x=>x.id)]);
+function typing(){const a=document.activeElement;return a&&(/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)||a.isContentEditable)}
+function mergeDay(a,b){const ns=win(a,b,'nu'),fs=win(a,b,'fu'),ms=win(a,b,'mu'),ls=win(a,b,'lu'),del=[...new Set([...(a.del||[]),...(b.del||[])])],mx=f=>Math.max(a[f]||0,b[f]||0);
+ const m={notes:ns.notes||'',nh:ns.nh||'',nu:mx('nu'),nc:fs.nc||'',nf:fs.nf||'',nz:fs.nz||0,fu:mx('fu'),mood:ms.mood||'',mu:mx('mu'),lk:ls.lk||0,lu:mx('lu'),u:mx('u'),del};
+ const lo=ns===a?b:a;let hist=[...(a.hist||[]),...(b.hist||[])];
+ if((lo.notes||'').trim()&&lo.notes!==ns.notes)hist.push({t:lo.nu||lo.u||Date.now(),notes:lo.notes,nh:lo.nh||''});
+ const sn=new Set();m.hist=hist.filter(x=>{const q=x.t+'|'+x.notes;if(sn.has(q))return false;sn.add(q);return true}).sort((x,y)=>y.t-x.t).slice(0,10);
+ const nw=(b.u||0)>(a.u||0)?b:a,od=nw===a?b:a;
+ for(const t of BK){const mp={};[...(od[t]||[]),...(nw[t]||[])].forEach(x=>{if(del.includes(x.id))return;const p=mp[x.id];mp[x.id]=p&&p.blob&&!x.blob?{...x,blob:p.blob}:x});m[t]=Object.values(mp)}
+ return m}
+async function upMedia(f,x){const du=await b2d(x.blob),CH=700000,n=Math.ceil(du.length/CH)||1,c='sync/'+cloud()+'/media/';
+ for(let i=0;i<n;i++)await f.db.doc(c+x.id+'_'+i).set({i,n,data:du.slice(i*CH,(i+1)*CH)});x.p=1}
+async function dnMedia(f,x){const c='sync/'+cloud()+'/media/',d0=await f.db.doc(c+x.id+'_0').get();if(!d0.exists)return;
+ const n=d0.data().n;let s=d0.data().data;for(let i=1;i<n;i++)s+=(await f.db.doc(c+x.id+'_'+i).get()).data().data;x.blob=await(await fetch(s)).blob()}
+async function dnAll(f,k){let ch=false;for(const t of['recs','imgs'])for(const x of D[k][t])if(!x.blob&&x.p){try{await dnMedia(f,x);ch=true}catch(e){}}
+ if(ch){save(k,true);if(k==sel)renderSheet()}}
+async function pushDay(f,k){const d=D[k];
+ for(const t of['recs','imgs'])for(const x of d[t])if(x.blob&&!x.p)await upMedia(f,x);
+ const ref=f.db.doc('sync/'+cloud()+'/days/'+k);let merged=null;
+ await f.db.runTransaction(async tx=>{const sn=await tx.get(ref),m=mergeDay(D[k],sn.exists?sn.data():{});merged=m;
+  const o={u:m.u||1,nu:m.nu||0,fu:m.fu||0,mu:m.mu||0,lu:m.lu||0,notes:m.notes||'',nh:m.nh||'',nc:m.nc||'',nf:m.nf||'',nz:m.nz||0,mood:m.mood||'',lk:m.lk||0,del:m.del||[],hist:m.hist||[]};
+  for(const t of BK)o[t]=m[t].map(({blob,...r})=>r);tx.set(ref,o)});
+ const b4=sig(D[k]);D[k]=mergeDay(D[k],merged);if(sig(D[k])!=b4)ui=1;save(k,true);dnAll(f,k)}
+async function pushAll(f){if(busy){busy=2;return}busy=1;
+ try{const lq=+localStorage.getItem('lastpush')||0;let mx=lq;
+  for(const k in D){const u=D[k].u||1;if(u>lq){await pushDay(f,k);mx=Math.max(mx,u)}}
+  localStorage.setItem('lastpush',mx);if(ui){ui=0;renderCal();if(!typing())renderSheet()}smsg('Last synced '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))
+ }catch(e){smsg('Sync paused: '+(e.code=='permission-denied'?'update the Firestore rules':e.code||e.message))}
+ finally{const again=busy==2;busy=0;if(again)syncSoon()}}
+async function startCloud(){if(!cloud())return;try{const f=await fbInit();
+ const lp=hasAny()?(+localStorage.getItem('lastpull')||0):0;if(unsub)unsub();
+ await new Promise(res=>{let first=true;const done=()=>{if(first){first=false;res()}};setTimeout(done,8000);
+  unsub=f.db.collection('sync/'+cloud()+'/days').where('u','>',lp).onSnapshot(sn=>{let mx=lp,n=0,ch=0;
+   sn.docChanges().forEach(c=>{if(c.doc.metadata.hasPendingWrites)return;const k=c.doc.id,r=c.doc.data(),b4=D[k]?sig(D[k]):'';mx=Math.max(mx,r.u||0);n++;
+    D[k]=mergeDay(D[k]||{events:[],rem:[],recs:[],imgs:[]},r);if(sig(D[k])!=b4)ch=1;save(k,true);dnAll(f,k)});
+   if(n){localStorage.setItem('lastpull',mx);if(ch){renderCal();if(!typing())renderSheet()}}done()},
+   e=>{smsg('Sync paused: '+(e.code=='permission-denied'?'update the Firestore rules':e.code||e.message));done()})});
+ for(const k in D)dnAll(f,k);await pushAll(f)}catch(e){smsg('Sync paused: '+(e.message=='config'?'add Firebase keys':e.code||e.message))}}
+function openSync(){const key=cloud();
+ pn.innerHTML=key?`<div class="mut">Online sync is on. On another device, open ⋮ → Sync online and enter this key. Keep it private.</div><div class="row" style="margin-top:6px"><input id="sk" readonly value="${key}"><button id="sy">Copy</button></div><div class="row"><button id="sr" style="width:100%">⬇ Re-download everything from cloud</button></div><div class="row"><button class="p" id="sn" style="flex:1">Sync now</button><button id="so" style="flex:1">Turn off</button><button id="sx">✕</button></div><div class="mut" id="ss">${esc(localStorage.getItem('syncmsg')||'')}</div>`:
+ `<div class="row"><button class="p" id="st1" style="flex:1">Start syncing this device</button><button id="sx">✕</button></div><div class="mut">Or join an existing calendar with its sync key:</div><div class="row" style="margin-top:6px"><input id="sj" placeholder="Paste sync key"><button id="sjb">Join</button></div><div class="mut" id="ss"></div>`;
+ $('#sx').onclick=()=>pn.style.display='none';
+ if(key){$('#sy').onclick=()=>{try{navigator.clipboard.writeText(key);smsg('Key copied')}catch(e){$('#sk').select()}};
+  $('#sn').onclick=async()=>{smsg('Syncing…');await startCloud()};$('#sr').onclick=async()=>{localStorage.removeItem('lastpull');localStorage.removeItem('lastpush');smsg('Downloading…');await startCloud()};
+  $('#so').onclick=()=>{if(!confirm('Turn off online sync on this device? Your data stays here.'))return;if(unsub)unsub();['synckey','lastpull','lastpush','syncmsg'].forEach(x=>localStorage.removeItem(x));openSync()}}
+ else{const go=k=>{k=k.trim();if(k.length<24)return smsg('That key looks too short');localStorage.setItem('synckey',k);localStorage.removeItem('lastpull');localStorage.removeItem('lastpush');startCloud();openSync()};
+  $('#st1').onclick=()=>{const a=new Uint8Array(20);crypto.getRandomValues(a);go([...a].map(x=>x.toString(16).padStart(2,'0')).join(''))};
+  $('#sjb').onclick=()=>go($('#sj').value)}}
+/* date jump + day locking */
+function isLocked(k){const l=(D[k]||{}).lk;return l===1||(l!==2&&localStorage.getItem('autolock')=='1'&&k<key(new Date()))}
+async function hashPin(v){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode((localStorage.getItem('pins')||'')+v));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function askPin(msg='Continue?'){const h=localStorage.getItem('pinh');if(!h)return confirm(msg);
+ const v=prompt('Enter your PIN to continue');if(v===null)return false;if(await hashPin(v)==h)return true;toast('Wrong PIN');return false}
+async function toggleLock(){const d=day(sel);
+ if(isLocked(sel)){if(!await askPin('Unlock this day so it can be edited?'))return;d.lk=2}else d.lk=1;d.lu=Date.now();
+ save(sel);renderSheet();renderCal()}
+function openLockSet(){const has=!!localStorage.getItem('pinh'),al=localStorage.getItem('autolock')=='1';pn.style.display='block';
+ pn.innerHTML=`<div class="mut">Locked days can’t be edited or deleted until you unlock them${has?' with your PIN':''}. Use 🔓 Lock day on any day.</div><div class="row" style="margin-top:8px"><button id="lp" style="flex:1">${has?'Change PIN':'Set a PIN'}</button><button id="lx">✕</button></div><div class="row"><label style="flex:1"><input type="checkbox" id="la" style="width:auto" ${al?'checked':''}> Auto-lock all past days</label></div>`;
+ $('#lx').onclick=()=>pn.style.display='none';
+ $('#lp').onclick=async()=>{if(has&&!await askPin())return;const a=prompt('New PIN (4 or more characters)');if(!a||a.length<4)return toast('PIN must be at least 4 characters');
+  localStorage.setItem('pins',Math.random().toString(36).slice(2));localStorage.setItem('pinh',await hashPin(a));toast('PIN saved');openLockSet()};
+ $('#la').onchange=async e=>{const on=e.target.checked;if(!on&&!await askPin('Turn off auto-lock?')){e.target.checked=true;return}localStorage.setItem('autolock',on?'1':'0');renderCal();renderSheet()}}
+function openGoto(){pn.style.display='block';
+ pn.innerHTML=`<div class="mut">Jump to any date, past or future</div><div class="row" style="margin-top:6px"><input type="date" id="gd" value="${sel}" min="1000-01-01" max="9999-12-31"><button class="p" id="gg">Go</button><button id="gx">✕</button></div><div class="row"><select id="gm">${MN.map((m,i)=>`<option value="${i}"${i==cur.getMonth()?' selected':''}>${m}</option>`).join('')}</select><input id="gy" type="number" min="1000" max="9999" value="${cur.getFullYear()}" style="width:110px"><button id="gv">View</button></div>`;
+ $('#gx').onclick=()=>pn.style.display='none';
+ $('#gg').onclick=()=>{const v=$('#gd').value;if(!v)return;sel=v;cur=parse(v);cur.setDate(1);pn.style.display='none';renderCal();renderSheet()};
+ $('#gv').onclick=()=>{const y=+$('#gy').value;if(!(y>=1000))return;cur=new Date(2000,+$('#gm').value,1);cur.setFullYear(y);renderCal()}}
+/* Google accounts: read-only calendar + tasks */
+const GCL=()=>self.GOOGLE_CLIENT_ID&&!/^PASTE/.test(self.GOOGLE_CLIENT_ID);
+const GSC='https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/tasks.readonly https://www.googleapis.com/auth/userinfo.email';
+const GCOL=['#33b679','#f6bf26','#039be5','#e67c73','#8e24aa','#0b8043'];
+let gtok={},GIDX=null;
+const gAcc=()=>{try{return JSON.parse(localStorage.getItem('gacc')||'[]')}catch(e){return[]}};
+const gSave=a=>localStorage.setItem('gacc',JSON.stringify(a));
+const gCache=()=>{try{return JSON.parse(localStorage.getItem('gcache')||'{}')}catch(e){return{}}};
+const hm=v=>{const d=new Date(v);return pad(d.getHours())+':'+pad(d.getMinutes())};
+function gmsg(m){const e=$('#gs');if(e)e.textContent=m}
+function gErr(e){const m=e.message||String(e);return /popup/.test(m)?'The Google window was blocked. Allow pop-ups and try again.':m=='access_denied'?'Access was not granted. Add this email as a Test user in Google Cloud and try again.':/^Calendar (401|403)/.test(m)?'Turn on the Google Calendar API for your project.':m}
+function gIdx(){if(GIDX)return GIDX;GIDX={};const c=gCache();gAcc().forEach(a=>((c[a.email]||{}).items||[]).forEach(x=>{if(x.src=='cal'?!a.cal:!a.tasks)return;(GIDX[x.d]=GIDX[x.d]||[]).push({...x,acc:a.email,color:x.src=='cal'?a.color:'#4285f4',task:x.src=='tasks'})}));return GIDX}
+function gOn(k){return(gIdx()[k]||[]).slice().sort((a,b)=>(a.time||'').localeCompare(b.time||''))}
+function spanDays(a,b){const o=[],d=parse(a),e=parse(b||a);let i=0;do{o.push(key(d));d.setDate(d.getDate()+1)}while(d<e&&++i<31);return o}
+async function gToken(hint,prompt){if(!GCL())throw new Error('Add GOOGLE_CLIENT_ID to firebase-config.js first');
+ if(!(window.google&&google.accounts))await loadScript('https://accounts.google.com/gsi/client');
+ return new Promise((res,rej)=>google.accounts.oauth2.initTokenClient({client_id:self.GOOGLE_CLIENT_ID,scope:GSC,login_hint:hint||undefined,prompt,callback:r=>r.error?rej(new Error(r.error)):res(r),error_callback:e=>rej(new Error(e.type||'popup'))}).requestAccessToken())}
+async function gFetch(email,interactive=true){
+ let t=gtok[email]&&gtok[email].exp>Date.now()?gtok[email].t:null;
+ if(!t){const r=await gToken(email,interactive?'':'none');t=r.access_token;gtok[email]={t,exp:Date.now()+(r.expires_in-60)*1000}}
+ const H={headers:{Authorization:'Bearer '+t}},items=[],a=new Date(),b=new Date();a.setFullYear(a.getFullYear()-1);b.setFullYear(b.getFullYear()+2);
+ let pt='';
+ for(let i=0;i<6;i++){const r=await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=2500&timeMin='+a.toISOString()+'&timeMax='+b.toISOString()+(pt?'&pageToken='+pt:''),H);
+  if(!r.ok)throw new Error('Calendar '+r.status);const j=await r.json();
+  (j.items||[]).forEach(e=>{if(e.status=='cancelled'||!e.start)return;const s=e.start,en=e.end||{},ti=e.summary||'(no title)';
+   if(s.date)spanDays(s.date,en.date).forEach(d=>items.push({d,title:ti,time:'',src:'cal'}));
+   else items.push({d:key(new Date(s.dateTime)),title:ti,time:hm(s.dateTime),end:en.dateTime?hm(en.dateTime):'',src:'cal'})});
+  pt=j.nextPageToken;if(!pt)break}
+ try{const lr=await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists',H);if(lr.ok)for(const l of(await lr.json()).items||[]){
+   const tr=await fetch('https://tasks.googleapis.com/tasks/v1/lists/'+l.id+'/tasks?showCompleted=true&showHidden=true&maxResults=100',H);if(!tr.ok)continue;
+   ((await tr.json()).items||[]).forEach(x=>{if(x.due)items.push({d:x.due.slice(0,10),title:x.title||'(task)',time:'',src:'tasks',done:x.status=='completed'})})}}catch(e){}
+ const c=gCache();c[email]={at:Date.now(),items};try{localStorage.setItem('gcache',JSON.stringify(c))}catch(e){throw new Error('Not enough storage for this calendar')}
+ GIDX=null;renderCal();if(!typing())renderSheet()}
+async function gAdd(){try{gmsg('Opening Google…');const r=await gToken('','select_account');
+ const u=await(await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+r.access_token}})).json();
+ if(!u.email)throw new Error('Could not read the account email');
+ const a=gAcc();if(!a.find(x=>x.email==u.email))a.push({email:u.email,cal:1,tasks:1,color:GCOL[a.length%GCOL.length]});gSave(a);
+ gtok[u.email]={t:r.access_token,exp:Date.now()+(r.expires_in-60)*1000};gmsg('Fetching events…');await gFetch(u.email);openGoogle()}catch(e){gmsg(gErr(e))}}
+async function gBoot(){for(const a of gAcc()){const c=gCache()[a.email];if(c&&Date.now()-c.at<36e5)continue;try{await gFetch(a.email,false)}catch(e){}}}
+function openGoogle(){pn.style.display='block';const A=gAcc(),c=gCache();
+ pn.innerHTML=`<div class="mut">Show your Google calendars and tasks here. Read-only: nothing is changed in Google.</div>${GCL()?'':'<div class="mut" style="color:var(--red)">Add GOOGLE_CLIENT_ID to firebase-config.js first.</div>'}`+
+ A.map((a,i)=>`<div style="margin-top:10px"><b style="overflow-wrap:anywhere">${esc(a.email)}</b><div class="mut">${c[a.email]?'Synced '+new Date(c[a.email].at).toLocaleString():'Not synced yet'}</div><label class="item"><input type="checkbox" style="width:auto;accent-color:${a.color}" data-g="${i}" data-w="cal" ${a.cal?'checked':''}> My calendar</label><label class="item"><input type="checkbox" style="width:auto;accent-color:#4285f4" data-g="${i}" data-w="tasks" ${a.tasks?'checked':''}> Tasks</label><div class="row" style="margin-top:6px"><button data-gs="${i}" style="flex:1">Sync</button><button data-gr="${i}" style="flex:1">Remove</button></div></div>`).join('')+
+ `<div class="row" style="margin-top:12px"><button class="p" id="ga" style="flex:1">+ Add Google account</button><button id="gx">✕</button></div><div class="mut" id="gs"></div>`;
+ $('#gx').onclick=()=>pn.style.display='none';$('#ga').onclick=gAdd;
+ pn.querySelectorAll('[data-g]').forEach(b=>b.onchange=()=>{const a=gAcc();a[+b.dataset.g][b.dataset.w]=b.checked?1:0;gSave(a);GIDX=null;renderCal();renderSheet()});
+ pn.querySelectorAll('[data-gs]').forEach(b=>b.onclick=async()=>{try{gmsg('Syncing…');await gFetch(gAcc()[+b.dataset.gs].email);openGoogle()}catch(e){gmsg(gErr(e))}});
+ pn.querySelectorAll('[data-gr]').forEach(b=>b.onclick=()=>{if(!confirm('Remove this account from the calendar?'))return;const a=gAcc(),x=a.splice(+b.dataset.gr,1)[0];gSave(a);const k=gCache();delete k[x.email];localStorage.setItem('gcache',JSON.stringify(k));GIDX=null;renderCal();renderSheet();openGoogle()})}
+const NCOL=['','#e74c3c','#f39c12','#27ae60','#3498db','#9b59b6','#e91e63','#a1887f'];
+/* rich notes */
+const FONTS=[['System','system-ui,sans-serif'],['Serif',"Georgia,'Times New Roman',serif"],['Typewriter',"'Courier New',monospace"],['Handwritten',"'Comic Sans MS','Segoe Print',cursive"],['Display',"Impact,'Arial Black',sans-serif"]],SIZES=['Small','Normal','Large','Big','Huge'],SZPX=[13,15,18,22,28],SZCMD=[2,3,4,5,6];
+const OKT=new Set(['B','I','U','STRONG','EM','SPAN','DIV','P','BR','FONT']),OKS=['color','font-family','font-size','font-weight','font-style','text-decoration','text-decoration-line','background-color'];
+function clean(html){const t=document.createElement('template');t.innerHTML=html||'';
+ (function w(n){[...n.childNodes].forEach(c=>{if(c.nodeType==3)return;
+  if(c.nodeType!=1||!OKT.has(c.tagName)){c.replaceWith(document.createTextNode(c.nodeType==1?c.textContent:''));return}
+  const st=(c.getAttribute('style')||'').split(';').map(x=>x.trim()).filter(x=>OKS.includes(x.split(':')[0].trim().toLowerCase())&&!/url\(|expression|javascript|@import/i.test(x)).join(';');
+  [...c.attributes].forEach(a=>c.removeAttribute(a.name));if(st)c.setAttribute('style',st);w(c)})})(t.content);
+ return t.innerHTML}
+function noteHtml(d){return d.nh?clean(d.nh):esc(d.notes||'').replace(/\n/g,'<br>')}
+let npend=null;
+function noteSave(){const e=$('#nt'),k=sel,d=day(k);if(!e||isLocked(k))return;
+ const nh=clean(e.innerHTML),nt=e.innerText.replace(/\u00a0/g,' ');
+ if((d.notes||'').trim()&&d.notes!==nt){const h=d.hist=d.hist||[];if(!h.length||Date.now()-h[0].t>12e4)h.unshift({t:Date.now(),notes:d.notes,nh:d.nh||''});d.hist=h.slice(0,10)}
+ d.nh=nh;d.notes=nt;d.nu=Date.now();npend=k;clearTimeout(wire.t);wire.t=setTimeout(flushNote,500)}
+function flushNote(){clearTimeout(wire.t);if(npend){const k=npend;npend=null;save(k);renderCal()}}
+addEventListener('visibilitychange',()=>{if(document.hidden)flushNote()});addEventListener('pagehide',flushNote);
+function openVers(){const d=day(sel),h=d.hist||[];pn.style.display='block';scrollTo(0,0);
+ pn.innerHTML=`<div class="mut">Earlier versions of this day’s note. Restoring keeps your current text in this list.</div>`+h.map((x,i)=>`<div class="item"><div class="b"><small>${new Date(x.t).toLocaleString()}</small>${esc((x.notes||'').slice(0,140))}</div><button data-vr="${i}">Restore</button></div>`).join('')+`<div class="row" style="margin-top:8px"><button id="vx" style="flex:1">Close</button></div>`;
+ $('#vx').onclick=()=>pn.style.display='none';
+ pn.querySelectorAll('[data-vr]').forEach(b=>b.onclick=()=>{if(isLocked(sel))return toast('This day is locked');const i=+b.dataset.vr,x=h[i];
+  d.hist=[{t:Date.now(),notes:d.notes||'',nh:d.nh||''},...h.filter((_,j)=>j!=i)].filter(z=>(z.notes||'').trim()).slice(0,10);
+  d.notes=x.notes;d.nh=x.nh||'';d.nu=Date.now();save(sel);pn.style.display='none';renderSheet();renderCal()})}
+let nsel=null;
+document.addEventListener('selectionchange',()=>{const e=$('#nt'),g=getSelection();if(e&&g.rangeCount&&e.contains(g.anchorNode))nsel=g.getRangeAt(0).cloneRange()});
+function fx(cmd,val){const e=$('#nt');if(!e||isLocked(sel))return;e.focus();if(nsel){const g=getSelection();g.removeAllRanges();g.addRange(nsel)}document.execCommand('styleWithCSS',false,true);document.execCommand(cmd,false,val);noteSave()}
+/* automatic backups: daily snapshots (text) + weekly reminder to save a file */
+const hasAny=()=>Object.values(D).some(d=>(d.notes&&d.notes.trim())||d.events.length||d.rem.length||d.recs.length||d.imgs.length||d.mood);
+function bkAll(){return new Promise(r=>{try{if(!db)return r([]);const o=[],c=db.transaction('bk').objectStore('bk').openCursor();c.onsuccess=()=>{const x=c.result;if(x){o.push({k:x.key,v:x.value});x.continue()}else r(o)};c.onerror=()=>r([])}catch(e){r([])}})}
+function bkPut(k,v){return new Promise(r=>{try{if(!db)return r();const t=db.transaction('bk','readwrite');t.objectStore('bk').put(v,k);t.oncomplete=r;t.onerror=r}catch(e){r()}})}
+function bkDel(k){return new Promise(r=>{try{const t=db.transaction('bk','readwrite');t.objectStore('bk').delete(k);t.oncomplete=r;t.onerror=r}catch(e){r()}})}
+function snapData(){const o={};for(const k in D){const d=D[k];if(!((d.notes&&d.notes.trim())||d.events.length||d.rem.length||d.recs.length||d.imgs.length||d.mood))continue;o[k]={...d,recs:d.recs.map(({blob,...r})=>r),imgs:d.imgs.map(({blob,...r})=>r)}}return o}
+async function autoSnap(){if(localStorage.getItem('autobk')=='0'||!db||!hasAny())return;
+ await bkPut('d'+key(new Date()),{at:Date.now(),days:snapData()});
+ const all=(await bkAll()).filter(x=>x.k[0]=='d').sort((a,b)=>b.k.localeCompare(a.k));for(const x of all.slice(14))await bkDel(x.k)}
+async function autoBoot(){if(localStorage.getItem('autobk')=='0'||!db)return;if(!(await bkAll()).some(x=>x.k=='d'+key(new Date())))await autoSnap()}
+addEventListener('visibilitychange',()=>{if(document.hidden)autoSnap()});
+function nudge(){const e=$('#bkn'),lf=+localStorage.getItem('lastfile')||0,sn=+localStorage.getItem('bksnooze')||0;
+ if(!(localStorage.getItem('bknudge')!='0'&&hasAny()&&Date.now()-lf>7*864e5&&Date.now()>sn)){e.style.display='none';return}
+ e.style.display='block';e.innerHTML=`<div>💾 ${lf?'It has been '+Math.floor((Date.now()-lf)/864e5)+' days since your last backup file.':'You have not saved a backup file yet.'}</div><div class="row" style="margin-top:8px"><button class="p" id="nb" style="flex:1">Back up now</button><button id="nl" style="flex:1">Later</button></div>`;
+ $('#nb').onclick=()=>exportAll();$('#nl').onclick=()=>{localStorage.setItem('bksnooze',Date.now()+2*864e5);nudge()}}
+async function bkRestore(k){const s=(await bkAll()).find(x=>x.k==k);if(!s)return;
+ if(!await askPin('Restore notes, events and reminders from this backup? Locked days are left unchanged.'))return;
+ await bkPut('undo',{at:Date.now(),days:snapData()});let n=0,sk=0;
+ for(const d in s.v.days){const r=s.v.days[d];if(isLocked(d)){sk++;continue}const c=day(d);
+  const keep=t=>(r[t]||[]).map(x=>{const cur=(c[t]||[]).find(y=>y.id==x.id);return cur&&cur.blob?cur:(x.p?x:null)}).filter(Boolean);
+  const rs=keep('recs'),im=keep('imgs'),ids=[...(r.events||[]),...(r.rem||[]),...rs,...im].map(x=>x.id);
+  Object.assign(c,r,{recs:rs,imgs:im,del:(c.del||[]).filter(i=>!ids.includes(i))});c.nu=c.fu=c.mu=Date.now();save(d);n++}
+ renderCal();renderSheet();toast('Restored '+n+' day'+(n==1?'':'s')+(sk?', skipped '+sk+' locked':''));openBackup()}
+async function openBackup(){const on=localStorage.getItem('autobk')!='0',wk=localStorage.getItem('bknudge')!='0',lf=+localStorage.getItem('lastfile')||0;
+ const list=(await bkAll()).sort((a,b)=>b.k.localeCompare(a.k));pn.style.display='block';
+ pn.innerHTML=`<label class="item"><input type="checkbox" id="ba" style="width:auto" ${on?'checked':''}> Automatic daily backups (keeps 14 days)</label><label class="item"><input type="checkbox" id="bw" style="width:auto" ${wk?'checked':''}> Remind me weekly to save a backup file</label><div class="mut" style="margin:6px 0">Last backup file: ${lf?new Date(lf).toLocaleDateString():'never'}</div><div class="mut" style="margin-bottom:6px">Phone storage protection: ${localStorage.getItem('persisted')=='1'?'on':'not granted (the browser may clear app data when the phone is low on space)'}</div><div class="row"><button class="p" id="bn" style="flex:1">Save backup file now</button><button id="bx">✕</button></div><div style="margin-top:10px"><b>Automatic backups</b></div>`+
+ (list.length?list.map(x=>`<div class="item"><div class="b">${x.k=='undo'?'Before last restore':new Date(x.k.slice(1)+'T12:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'})}<small>${Object.keys(x.v.days).length} days with entries</small></div><button data-br="${x.k}">Restore</button></div>`).join(''):'<div class="mut">None yet. The first one is saved when you leave the app.</div>')+
+ `<div class="mut" style="margin-top:6px">These keep text only: notes, events, reminders and moods. Photos and recordings are protected by the backup file and by online sync.</div>`;
+ $('#bx').onclick=()=>pn.style.display='none';
+ $('#ba').onchange=e=>localStorage.setItem('autobk',e.target.checked?'1':'0');
+ $('#bw').onchange=e=>{localStorage.setItem('bknudge',e.target.checked?'1':'0');nudge()};
+ $('#bn').onclick=async()=>{await exportAll();openBackup()};
+ pn.querySelectorAll('[data-br]').forEach(b=>b.onclick=()=>bkRestore(b.dataset.br))}
+/* holidays: Kenya, worked out in the app for any year (works offline) */
+function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(y,mo-1,da)}
+function nthDow(y,m,w,n){const f=new Date(y,m,1);return new Date(y,m,1+(w-f.getDay()+7)%7+(n-1)*7)}
+function hijri(y){const o={};try{const f=new Intl.DateTimeFormat('en-u-ca-islamic-umalqura',{day:'numeric',month:'numeric'});
+ for(let i=0;i<=366;i++){const d=new Date(y,0,1+i);if(d.getFullYear()!=y)break;const p=f.formatToParts(d),dd=+p.find(x=>x.type=='day').value,mm=+p.find(x=>x.type=='month').value;if(!o[mm+'-'+dd])o[mm+'-'+dd]=d}}catch(e){}return o}
+const HY={},HX={};
+function holYear(y){if(HY[y])return HY[y];const L=[],pub=new Set(),add=(dt,n,t)=>{L.push({d:key(dt),n,t});if(t=='p')pub.add(key(dt))};
+ const E=easter(y),off=n=>{const x=new Date(E);x.setDate(x.getDate()+n);return x},H=hijri(y);
+ const fixed=[[1,1,"New Year's Day"],[5,1,'Labour Day'],[6,1,'Madaraka Day'],[10,10,y>=2024?'Mazingira Day':'Moi / Huduma Day (now Mazingira Day)'],[10,20,'Mashujaa Day'],[12,12,'Jamhuri Day'],[12,25,'Christmas Day'],[12,26,'Boxing Day / Utamaduni Day']];
+ fixed.forEach(f=>add(new Date(y,f[0]-1,f[1]),f[2],'p'));
+ add(off(-2),'Good Friday','p');add(off(1),'Easter Monday','p');
+ if(H['10-1'])add(H['10-1'],'Idd-ul-Fitr (approx.)','p');if(H['12-10'])add(H['12-10'],'Idd-ul-Azha (approx.)','p');
+ fixed.forEach(f=>{const dt=new Date(y,f[0]-1,f[1]);if(dt.getDay()==0){const m=new Date(dt);do{m.setDate(m.getDate()+1)}while(pub.has(key(m)));add(m,f[2]+' (observed)','p')}});
+ [[2,14,"Valentine's Day"],[3,8,"International Women's Day"],[3,21,'International Day of Forests'],[4,22,'Earth Day'],[5,25,'Africa Day'],[6,5,'World Environment Day'],[8,15,'Assumption of Mary'],[10,5,"World Teachers' Day"],[11,1,'All Saints’ Day'],[12,24,'Christmas Eve'],[12,31,"New Year's Eve"]].forEach(f=>add(new Date(y,f[0]-1,f[1]),f[2],'o'));
+ add(nthDow(y,4,0,2),"Mother's Day",'o');add(nthDow(y,5,0,3),"Father's Day",'o');
+ add(off(-46),'Ash Wednesday','o');add(off(-7),'Palm Sunday','o');add(E,'Easter Sunday','o');add(off(39),'Ascension Day','o');add(off(49),'Pentecost','o');
+ if(H['9-1'])add(H['9-1'],'Ramadan begins (approx.)','o');
+ return HY[y]=L}
+function hIdx(y){if(HX[y])return HX[y];const m={};holYear(y).forEach(h=>(m[h.d]=m[h.d]||[]).push(h));return HX[y]=m}
+function customH(){try{return JSON.parse(localStorage.getItem('holx')||'[]')}catch(e){return[]}}
+function hOn(k){if(localStorage.getItem('holon')=='0')return[];const ob=localStorage.getItem('holobs')!='0';
+ return(hIdx(+k.slice(0,4))[k]||[]).filter(h=>h.t=='p'||ob).concat(customH().filter(h=>h.d==k).map(h=>({d:k,n:h.n,t:'p'}))).sort((a,b)=>(a.t=='p'?0:1)-(b.t=='p'?0:1))}
+function renderHol(){const e=$('#uph');if(!e)return;const t=key(new Date()),y=new Date().getFullYear();
+ const all=localStorage.getItem('holon')=='0'?[]:[...holYear(y),...holYear(y+1),...customH().map(h=>({...h,t:'p'}))].filter(h=>h.t=='p'&&h.d>=t).sort((a,b)=>a.d.localeCompare(b.d)).slice(0,6);
+ e.innerHTML=all.map(h=>`<div class="item" data-hg="${h.d}"><div class="b">🎉 ${esc(h.n)}<small>${parse(h.d).toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</small></div></div>`).join('')||'<div class="mut">No upcoming holidays.</div>';
+ e.querySelectorAll('[data-hg]').forEach(i=>i.onclick=()=>{sel=i.dataset.hg;cur=parse(sel);cur.setDate(1);renderCal();renderSheet();scrollTo(0,0)})}
+function openHol(){const on=localStorage.getItem('holon')!='0',ob=localStorage.getItem('holobs')!='0',cx=customH();pn.style.display='block';
+ pn.innerHTML=`<label class="item"><input type="checkbox" id="h1" style="width:auto" ${on?'checked':''}> Show Kenyan public holidays</label><label class="item"><input type="checkbox" id="h2" style="width:auto" ${ob?'checked':''}> Also show observances (Easter, Mother’s Day, World Teachers’ Day…)</label><div class="mut" style="margin:6px 0">Holidays are worked out inside the app for any year, so they work offline. Idd dates follow the Islamic calendar and can differ by a day from the official announcement. Add special gazetted holidays below.</div><div class="row"><input type="date" id="hd"><input id="hnm" placeholder="Holiday name"></div><div class="row"><button class="p" id="ha" style="flex:1">Add holiday</button><button id="hx">✕</button></div>`+cx.map((h,i)=>`<div class="item"><div class="b">🎉 ${esc(h.n)}<small>${h.d}</small></div><button class="x" data-hdel="${i}">×</button></div>`).join('');
+ const rr=()=>{renderCal();renderSheet()};
+ $('#hx').onclick=()=>pn.style.display='none';
+ $('#h1').onchange=e=>{localStorage.setItem('holon',e.target.checked?'1':'0');rr()};
+ $('#h2').onchange=e=>{localStorage.setItem('holobs',e.target.checked?'1':'0');rr()};
+ $('#ha').onclick=()=>{const d=$('#hd').value,n=$('#hnm').value.trim();if(!d||!n)return toast('Pick a date and type a name');const c=customH();c.push({d,n});localStorage.setItem('holx',JSON.stringify(c));rr();openHol()};
+ pn.querySelectorAll('[data-hdel]').forEach(b=>b.onclick=()=>{const c=customH();c.splice(+b.dataset.hdel,1);localStorage.setItem('holx',JSON.stringify(c));rr();openHol()})}
+/* second copy of the text data + self-repair */
+let mtm=null;
+function mirror(){clearTimeout(mtm);mtm=setTimeout(()=>{try{localStorage.setItem('mirror',JSON.stringify({at:Date.now(),days:snapData()}))}catch(e){}},1000)}
+const dayHas=c=>c&&((c.notes&&c.notes.trim())||(c.events||[]).length||(c.rem||[]).length||(c.recs||[]).length||(c.imgs||[]).length||c.mood);
+function healLocal(){let m=null;try{m=JSON.parse(localStorage.getItem('mirror')||'null')}catch(e){}
+ if(!m||!m.days)return 0;let n=0;
+ for(const k in m.days){const r=m.days[k];if(!dayHas(D[k])&&dayHas(r)){D[k]={...r,recs:(r.recs||[]).filter(x=>x.p),imgs:(r.imgs||[]).filter(x=>x.p)};save(k,true);n++}}
+ return n}
+async function openHealth(){pn.style.display='block';scrollTo(0,0);
+ const reg=('serviceWorker'in navigator)?await navigator.serviceWorker.getRegistration().catch(()=>null):null;
+ let ks='none',ci='no',est='?';try{ks=(await caches.keys()).join(', ')||'none';ci=(await caches.match('./index.html'))?'yes':'no'}catch(e){}
+ try{const e=await navigator.storage.estimate();est=(e.usage/1048576).toFixed(1)+' MB used'}catch(e){}
+ const n=Object.values(D).filter(dayHas).length,mi=(()=>{try{return Object.keys(JSON.parse(localStorage.getItem('mirror')||'{"days":{}}').days).length}catch(e){return 0}})();
+ const rows=[['Saving on this phone',db?'working':'NOT WORKING'],['Days with entries',n],['Backup copy on this phone',mi+' days'],['Storage protection',localStorage.getItem('persisted')=='1'?'on':'not granted'],['Offline app installed',reg&&reg.active?'yes':'NO'],['Offline copy ready',ci==='yes'?'yes':'NO'],['Online sync',cloud()?'on':'off'],['Last sync',localStorage.getItem('syncmsg')||'-'],['Storage used',est]];
+ pn.innerHTML=rows.map(r=>`<div class="item"><div class="b">${r[0]}</div><div>${esc(String(r[1]))}</div></div>`).join('')+`<div class="mut" style="margin-top:6px">Caches: ${esc(ks)}</div><div class="row" style="margin-top:8px"><button class="p" id="hr" style="flex:1">Repair offline copy</button><button id="hx">✕</button></div><div class="mut" id="hm"></div>`;
+ $('#hx').onclick=()=>pn.style.display='none';
+ $('#hr').onclick=async()=>{try{const r=await navigator.serviceWorker.ready;(r.active||navigator.serviceWorker.controller).postMessage('refresh');$('#hm').textContent='Done. Close the app completely, then open it again with internet on.'}catch(e){$('#hm').textContent='Could not repair: '+e.message}}}
+function net(){$('#off').style.display=navigator.onLine?'none':'block'}
+addEventListener('online',()=>{net();syncSoon()});addEventListener('offline',net);net();
+/* init */
+$('#pv').onclick=()=>{cur.setMonth(cur.getMonth()-1);renderCal()};$('#mt').onclick=openGoto;
+$('#nx').onclick=()=>{cur.setMonth(cur.getMonth()+1);renderCal()};
+$('#td').onclick=()=>{cur=new Date();cur.setDate(1);sel=key(new Date());renderCal();renderSheet()};
+$('#view').onclick=()=>$('#view').style.display='none';
+$('#toast').onclick=()=>$('#toast').style.display='none';
+(async()=>{await openDB();await loadAll();if(!db)warnSave();{const hn=healLocal();if(hn)toast('Recovered '+hn+' day'+(hn==1?'':'s')+' from the backup copy on this phone')}try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().then(g=>localStorage.setItem('persisted',g?'1':'0'))}catch(e){}renderCal();renderSheet();tick();setInterval(tick,15000);if(localStorage.getItem('push')=='1')enablePush(true);startCloud();gBoot();autoBoot();nudge()})();
+</script></body></html>
